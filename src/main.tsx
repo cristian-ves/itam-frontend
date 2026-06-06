@@ -7,8 +7,6 @@ import { store } from "./app/store.ts";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
+    <Provider store={store} children={<App />} />
   </StrictMode>,
 );
