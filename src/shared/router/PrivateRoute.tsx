@@ -1,8 +1,11 @@
-import { Navigate, Outlet } from "react-router-dom"
-import { useAppSelector } from "../../app/hooks"
+import { Navigate, Outlet } from "react-router-dom";
+import { useAppSelector } from "../../app/hooks";
 
 export const PrivateRoute = () => {
-    const { isAuthenticated } = useAppSelector((state) => state.auth)
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
 
-    return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />
-}
+  // cuando se termine de crear el dash: quitar este return.
+  return <Outlet />;
+  // descomentar la linea de abajo.
+  //return isAuthenticated ? <Outlet /> : <Navigate to="/login" replace />;
+};
