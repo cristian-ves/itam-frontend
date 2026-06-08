@@ -4,16 +4,22 @@ interface AuthState {
   user: { id: string; name: string; email: string } | null;
   token: string | null;
   isAuthenticated: boolean;
-  //   error: string | null;
-  //   loading: boolean;
 }
 
+// const initialState: AuthState = {
+//   user: null,
+//   token: null,
+//   isAuthenticated: false,
+// };
+
 const initialState: AuthState = {
-  user: null,
+  user: {
+    id: "abc",
+    name: "Ricardo",
+    email: "ricardo@gmail.com",
+  },
   token: null,
-  isAuthenticated: false,
-  //   error: null,
-  //   loading: false,
+  isAuthenticated: true,
 };
 
 const authSlice = createSlice({
