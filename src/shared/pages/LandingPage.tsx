@@ -37,13 +37,6 @@ const NavBar = () => {
         </Link>
         <div className="flex items-center space-x-4">
           <Link
-            to="/"
-            reloadDocument
-            className="font-medium text-gray-500 hover:text-indigo-600"
-          >
-            Inicio
-          </Link>
-          <Link
             to="/login"
             className="rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
           >
