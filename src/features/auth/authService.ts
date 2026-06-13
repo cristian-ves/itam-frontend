@@ -1,3 +1,5 @@
+import api from "../../shared/services/api";
+
 export interface LoginCredentials {
   email: string;
   password: string;
@@ -9,24 +11,25 @@ export interface LoginResponse {
     id: string;
     name: string;
     email: string;
+    rol: string;
   };
 }
-
-// TODO: replace mock with real call when backend is ready
-// return api.post<LoginResponse>("/auth/login", credentials)
 
 export const loginService = async (
   credentials: LoginCredentials,
 ): Promise<LoginResponse> => {
-  console.log("credentials", credentials);
+  const response = await api.post<any>("/auth/login", {
+    correo: credentials.email,
+    password: credentials.password,
+  });
 
-  // mock response
   return {
-    token: "mock-token-123",
+    token: response.data.access_token,
     user: {
-      id: "1",
-      name: "Ricardo",
-      email: credentials.email,
+      id: String(response.data.usuario.id),
+      name: response.data.usuario.nombre,
+      email: response.data.usuario.correo,
+      rol: response.data.usuario.rol,
     },
   };
 };

@@ -10,29 +10,17 @@ import {
 } from "./authService";
 
 interface AuthState {
-  user: { id: string; name: string; email: string } | null;
+  user: { id: string; name: string; email: string; rol: string } | null;
   token: string | null;
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
 }
 
-// const initialState: AuthState = {
-//   user: null,
-//   token: null,
-//   isAuthenticated: false,
-//   loading: false,
-//   error: null,
-// };
-
 const initialState: AuthState = {
-  user: {
-    id: "1",
-    name: "Ricardo",
-    email: "dev@itam.com",
-  },
-  token: "mock-token-123",
-  isAuthenticated: true,
+  user: null,
+  token: null,
+  isAuthenticated: false,
   loading: false,
   error: null,
 };
