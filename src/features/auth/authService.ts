@@ -33,3 +33,16 @@ export const loginService = async (
     },
   };
 };
+
+export const getPerfilService = async (): Promise<LoginResponse> => {
+  const response = await api.get<any>("/auth/perfil");
+  return {
+    token: localStorage.getItem("token")!,
+    user: {
+      id: String(response.data.id),
+      name: response.data.nombre,
+      email: response.data.correo,
+      rol: response.data.rol.nombre,
+    },
+  };
+};

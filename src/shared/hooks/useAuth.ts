@@ -5,7 +5,5 @@ export const useAuth = () => {
 
   return {
     ...auth,
-    //TODO: Implement roles if thery're used on the backend
-    //  isAdmin: auth.user?.role === "admin",
   };
 };

@@ -4,6 +4,7 @@ import {
   type PayloadAction,
 } from "@reduxjs/toolkit";
 import {
+  getPerfilService,
   loginService,
   type LoginCredentials,
   type LoginResponse,
@@ -15,14 +16,18 @@ interface AuthState {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
+  isRestoring: boolean;
 }
+
+const token = localStorage.getItem("token");
 
 const initialState: AuthState = {
   user: null,
-  token: null,
+  token: token,
   isAuthenticated: false,
   loading: false,
   error: null,
+  isRestoring: true,
 };
 
 export const loginThunk = createAsyncThunk<LoginResponse, LoginCredentials>(
@@ -35,6 +40,18 @@ export const loginThunk = createAsyncThunk<LoginResponse, LoginCredentials>(
       return rejectWithValue(
         error.response?.data?.message ?? "Error al iniciar sesión",
       );
+    }
+  },
+);
+
+export const restoreSessionThunk = createAsyncThunk(
+  "auth/restoreSession",
+  async (_, { rejectWithValue }) => {
+    try {
+      return await getPerfilService();
+    } catch {
+      localStorage.removeItem("token");
+      return rejectWithValue("Sesión expirada");
     }
   },
 );
@@ -61,6 +78,9 @@ const authSlice = createSlice({
       state.error = null;
       localStorage.removeItem("token");
     },
+    setIsRestoring: (state, action: PayloadAction<boolean>) => {
+      state.isRestoring = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -73,14 +93,31 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        state.isRestoring = false;
         localStorage.setItem("token", action.payload.token);
       })
       .addCase(loginThunk.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+        state.isRestoring = false;
+      })
+      .addCase(restoreSessionThunk.pending, (state) => {
+        state.isRestoring = true;
+      })
+      .addCase(restoreSessionThunk.fulfilled, (state, action) => {
+        state.user = action.payload.user;
+        state.token = action.payload.token;
+        state.isAuthenticated = true;
+        state.isRestoring = false;
+      })
+      .addCase(restoreSessionThunk.rejected, (state) => {
+        state.user = null;
+        state.token = null;
+        state.isAuthenticated = false;
+        state.isRestoring = false;
       });
   },
 });
 
-export const { setCredentials, logout } = authSlice.actions;
+export const { setCredentials, logout, setIsRestoring } = authSlice.actions;
 export default authSlice.reducer;

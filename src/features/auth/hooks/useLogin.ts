@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../../../app/hooks";
 import { useAuth } from "../../../shared/hooks/useAuth";
 import { loginThunk } from "../authSlice";
+import { toast } from "sonner";
 
 export const useLogin = () => {
   const dispatch = useAppDispatch();
@@ -19,6 +20,7 @@ export const useLogin = () => {
     e.preventDefault();
     const result = await dispatch(loginThunk(form));
     if (loginThunk.fulfilled.match(result)) {
+      toast.success(`Bienvenido, ${result.payload.user.name}`);
       navigate("/dashboard", { replace: true });
     }
   };

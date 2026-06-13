@@ -1,9 +1,17 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { useAuth } from "../hooks/useAuth";
+import Spinner from "../components/atoms/Spinner";
 
 export const PrivateRoute = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isRestoring } = useAuth();
+
+  if (isRestoring)
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-gray-50">
+        <Spinner size="lg" label="Cargando sesión..." />
+      </div>
+    );
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
