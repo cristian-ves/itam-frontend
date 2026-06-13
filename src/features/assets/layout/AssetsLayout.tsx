@@ -9,7 +9,7 @@ export const AssetsLayout = () => {
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden">
+    <div className="flex h-full overflow-hidden">
       <Sidebar />
       <main className="flex-1 overflow-y-auto p-10">
         <header className="mb-10 flex items-center justify-between">

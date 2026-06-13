@@ -1,5 +1,8 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
+import { UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useAppDispatch } from "../../app/hooks";
+import { logout } from "../../features/auth/authSlice";
 
 const navLinks = [
   { to: "/dashboard", text: "Dashboard" },
@@ -10,9 +13,16 @@ const navLinks = [
 
 export const Navbar = () => {
   const { user } = useAuth();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login", { replace: true });
+  };
 
   return (
-    <header className="h-14 bg-gray-900 border-b border-gray-700 flex items-center justify-between px-6 shrink-0">
+    <header className="sticky top-0 z-50 h-14 bg-gray-900 border-b border-gray-700 flex items-center justify-between px-6 shrink-0">
       <nav className="flex items-center gap-1">
         {navLinks.map(({ to, text }) => (
           <NavLink
@@ -35,8 +45,26 @@ export const Navbar = () => {
         <span className="text-sm font-semibold text-gray-400">
           {user?.name}
         </span>
-        <button className="rounded-md bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors duration-150">
+        <NavLink
+          to="/perfil"
+          className={({ isActive }) =>
+            `cursor-pointer p-1.5 rounded-md transition-colors duration-150 ${
+              isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            }`
+          }
+        >
+          <UserCircle size={20} />
+        </NavLink>
+        <button className="cursor-pointer rounded-md bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors duration-150">
           Carga Masiva
+        </button>
+        <button
+          onClick={handleLogout}
+          className="cursor-pointer p-1.5 rounded-md text-gray-400 hover:text-red-400 hover:bg-gray-800 transition-colors duration-150"
+        >
+          <LogOut size={18} />
         </button>
       </div>
     </header>

@@ -18,6 +18,7 @@ import {
   ProyectoresPage,
   ServidoresPage,
 } from "../../features/assets/pages";
+import { PerfilPage } from "../../features/auth/pages/PerfilPage";
 
 const router = createBrowserRouter([
   // Always public
@@ -47,6 +48,7 @@ const router = createBrowserRouter([
         ],
       },
 
+      { path: "/perfil", element: <PerfilPage /> },
       { path: "/asignaciones", element: <AssignmentsPage /> },
       { path: "/mantenimiento", element: <MaintenancePage /> },
     ],

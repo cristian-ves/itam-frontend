@@ -20,7 +20,7 @@ export const PrivateRoute = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <Navbar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
         <Outlet />
       </div>
     </div>
