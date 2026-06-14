@@ -1,20 +1,23 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import api from "../../../shared/services/api";
-
-import { setCredentials } from "../authSlice";
-import { useAppDispatch } from "../../../app/hooks";
 import { useAuth } from "../../../shared/hooks/useAuth";
+import { useAppDispatch } from "../../../app/hooks";
+import { setCredentials } from "../authSlice";
 
 export const usePerfil = () => {
   const { user, token } = useAuth();
   const dispatch = useAppDispatch();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  const [perfilLoading, setPerfilLoading] = useState(false);
+  const [perfilError, setPerfilError] = useState<string | null>(null);
+
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   const updatePerfil = async (data: { nombre: string; correo: string }) => {
-    setLoading(true);
-    setError(null);
+    setPerfilLoading(true);
+    setPerfilError(null);
     try {
       const response = await api.patch("/auth/perfil", data);
       dispatch(
@@ -31,10 +34,10 @@ export const usePerfil = () => {
       toast.success("Perfil actualizado correctamente");
     } catch (err: any) {
       const msg = err.response?.data?.message ?? "Error al actualizar perfil";
-      setError(msg);
+      setPerfilError(msg);
       toast.error(msg);
     } finally {
-      setLoading(false);
+      setPerfilLoading(false);
     }
   };
 
@@ -42,18 +45,27 @@ export const usePerfil = () => {
     passwordActual: string;
     passwordNueva: string;
   }) => {
-    setLoading(true);
-    setError(null);
+    setPasswordLoading(true);
+    setPasswordError(null);
     try {
       await api.patch("/auth/cambiar-password", data);
       toast.success("Contraseña actualizada correctamente");
     } catch (err: any) {
       const msg = err.response?.data?.message ?? "Error al cambiar contraseña";
+      setPasswordError(msg);
       toast.error(msg);
     } finally {
-      setLoading(false);
+      setPasswordLoading(false);
     }
   };
 
-  return { user, loading, error, updatePerfil, cambiarPassword };
+  return {
+    user,
+    perfilLoading,
+    perfilError,
+    passwordLoading,
+    passwordError,
+    updatePerfil,
+    cambiarPassword,
+  };
 };

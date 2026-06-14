@@ -3,12 +3,11 @@ import { usePerfil } from "../hooks/usePerfil";
 import Spinner from "../../../shared/components/atoms/Spinner";
 
 export const EditPerfilForm = () => {
-  const { user, loading, updatePerfil } = usePerfil();
+  const { user, perfilLoading, perfilError, updatePerfil } = usePerfil();
   const [form, setForm] = useState({
     nombre: user?.name ?? "",
     correo: user?.email ?? "",
   });
-  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -16,12 +15,7 @@ export const EditPerfilForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
-    try {
-      await updatePerfil(form);
-    } catch (err: any) {
-      setError(err.message ?? "Error al actualizar perfil");
-    }
+    await updatePerfil(form);
   };
 
   return (
@@ -56,13 +50,13 @@ export const EditPerfilForm = () => {
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
         </div>
-        {error && <p className="text-sm text-red-500">{error}</p>}
+        {perfilError && <p className="text-sm text-red-500">{perfilError}</p>}
         <button
           type="submit"
-          disabled={loading}
+          disabled={perfilLoading}
           className="cursor-pointer rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
-          {loading ? <Spinner size="sm" /> : "Guardar cambios"}
+          {perfilLoading ? <Spinner size="sm" /> : "Guardar cambios"}
         </button>
       </form>
     </div>

@@ -10,7 +10,7 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <App />
-      <Toaster position="top-right" richColors closeButton />
+      <Toaster position="top-right" richColors closeButton offset={70} />
     </Provider>
   </StrictMode>,
 );
