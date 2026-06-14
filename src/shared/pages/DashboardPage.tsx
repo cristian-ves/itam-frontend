@@ -27,18 +27,52 @@ interface AssetRecord {
   categoria?: string;
 }
 
+interface TableItem {
+  id: string;
+  activo: string;
+  tipo: string;
+  detalle: string;
+  info: string;
+  estado: string;
+  estadoColor: string;
+}
+
+const getStatusColor = (estado: string) => {
+  const lower = estado?.toLowerCase() || "";
+  if (lower.includes("disponible") || lower === "activa" || lower === "activo")
+    return "bg-green-100 text-green-700";
+  if (lower.includes("asignado")) return "bg-blue-100 text-blue-700";
+  if (lower.includes("mantenimiento") || lower.includes("crítico"))
+    return "bg-red-100 text-red-700";
+  if (lower.includes("vencer") || lower.includes("pendiente"))
+    return "bg-orange-100 text-orange-700";
+  return "bg-gray-100 text-gray-700";
+};
+
 export const DashboardPage = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [categoryBars, setCategoryBars] = useState<CategoryBar[]>([]);
+  const [tableItems, setTableItems] = useState<TableItem[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const [dashboardResponse, activosResponse] = await Promise.allSettled([
+        const [
+          dashboardResponse,
+          activosResponse,
+          labsResponse,
+          servidoresResponse,
+          proyectoresResponse,
+          licenciasResponse,
+        ] = await Promise.allSettled([
           api.get("/dashboard"),
           api.get("/dashboard/activos"),
+          api.get("/dashboard/laboratorios"),
+          api.get("/dashboard/servidores"),
+          api.get("/dashboard/proyectores"),
+          api.get("/dashboard/licencias"),
         ]);
 
         if (dashboardResponse.status === "fulfilled") {
@@ -69,6 +103,96 @@ export const DashboardPage = () => {
             );
           }
         }
+
+        const items: TableItem[] = [];
+
+        if (labsResponse.status === "fulfilled") {
+          const labs =
+            labsResponse.value.data?.data ?? labsResponse.value.data ?? [];
+          if (Array.isArray(labs)) {
+            labs.forEach((lab: any) => {
+              items.push({
+                id: `lab-${lab.id}`,
+                activo: lab.nombre_lab || "Laboratorio",
+                tipo: "Laboratorio",
+                detalle: lab.edificio_salon || "Sin ubicación",
+                info: `Capacidad: ${lab.capacidad || 0}`,
+                estado: lab.estado || "Desconocido",
+                estadoColor: getStatusColor(lab.estado || ""),
+              });
+            });
+          }
+        }
+
+        if (servidoresResponse.status === "fulfilled") {
+          const servidores =
+            servidoresResponse.value.data?.data ??
+            servidoresResponse.value.data ??
+            [];
+          if (Array.isArray(servidores)) {
+            servidores.forEach((srv: any) => {
+              const date = srv.ultimo_mantenimiento_fecha
+                ? new Date(srv.ultimo_mantenimiento_fecha).toLocaleDateString()
+                : "N/A";
+              items.push({
+                id: `srv-${srv.id}`,
+                activo: srv.nombre || "Servidor",
+                tipo: "Servidor",
+                detalle: `IP: ${srv.direccion_ip || "N/A"}`,
+                info: `Mantenimiento: ${date}`,
+                estado: srv.estado || "Desconocido",
+                estadoColor: getStatusColor(srv.estado || ""),
+              });
+            });
+          }
+        }
+
+        if (proyectoresResponse.status === "fulfilled") {
+          const proyectores =
+            proyectoresResponse.value.data?.data ??
+            proyectoresResponse.value.data ??
+            [];
+          if (Array.isArray(proyectores)) {
+            proyectores.forEach((proy: any) => {
+              items.push({
+                id: `proy-${proy.id}`,
+                activo: proy.nombre || "Proyector",
+                tipo: "Proyector",
+                detalle: proy.marca_y_modelo || "Sin modelo",
+                info: `Asignado a: ${proy.laboratorio_asignado || "N/A"}`,
+                estado: proy.estado || "Desconocido",
+                estadoColor: getStatusColor(proy.estado || ""),
+              });
+            });
+          }
+        }
+
+        if (licenciasResponse.status === "fulfilled") {
+          const licencias =
+            licenciasResponse.value.data?.data ??
+            licenciasResponse.value.data ??
+            [];
+          if (Array.isArray(licencias)) {
+            licencias.forEach((lic: any) => {
+              const date = lic.fecha_vencimiento
+                ? new Date(lic.fecha_vencimiento).toLocaleDateString()
+                : "N/A";
+              const days = lic.dias_restantes ?? 0;
+              const estadoStr = days < 30 ? "Por vencer" : "Activa";
+              items.push({
+                id: `lic-${lic.id}`,
+                activo: `${lic.software} ${lic.version}`,
+                tipo: "Licencia",
+                detalle: lic.proveedor || "Sin proveedor",
+                info: `Vence: ${date} (${days} días)`,
+                estado: estadoStr,
+                estadoColor: getStatusColor(estadoStr),
+              });
+            });
+          }
+        }
+
+        setTableItems(items);
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -567,85 +691,58 @@ export const DashboardPage = () => {
       </div>
 
       {/* Bottom Section: Tables/Lists */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-8">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
           <h3 className="text-lg font-bold text-gray-800">
-            Alertas y Garantías Próximas
+            Resumen de Elementos
           </h3>
           <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-            Ver todas
+            Ver todos
           </button>
         </div>
-        <div className="overflow-x-auto">
+        <div className="max-h-96 overflow-y-auto overflow-x-auto">
           <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-semibold">
+            <thead className="bg-gray-50/50 text-gray-500 text-xs uppercase font-semibold sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-4">Activo</th>
                 <th className="px-6 py-4">Tipo</th>
-                <th className="px-6 py-4">Alerta</th>
-                <th className="px-6 py-4">Fecha límite</th>
+                <th className="px-6 py-4">Detalles</th>
+                <th className="px-6 py-4">Información Extra</th>
                 <th className="px-6 py-4">Estado</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  Servidor Dell R740 (SRV-005)
-                </td>
-                <td className="px-6 py-4">Servidor</td>
-                <td className="px-6 py-4">Garantía expira</td>
-                <td className="px-6 py-4 text-orange-600 font-medium">
-                  12 Ago 2024
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                    Pendiente
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  Servidor HP ProLiant (SRV-004)
-                </td>
-                <td className="px-6 py-4">Servidor</td>
-                <td className="px-6 py-4">Mantenimiento preventivo</td>
-                <td className="px-6 py-4 text-red-600 font-medium">
-                  20 Jul 2024
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
-                    Crítico
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  Proyector Epson L200 (PRY-012)
-                </td>
-                <td className="px-6 py-4">Proyector</td>
-                <td className="px-6 py-4">Cambio de lámpara</td>
-                <td className="px-6 py-4 text-orange-600 font-medium">
-                  01 Sep 2024
-                </td>
-                <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 bg-orange-100 text-orange-700 rounded-full text-xs font-semibold">
-                    Pendiente
-                  </span>
-                </td>
-              </tr>
-              <tr className="hover:bg-gray-50 transition-colors">
-                <td className="px-6 py-4 font-medium text-gray-900">
-                  Licencia Adobe CC (Enterprise)
-                </td>
-                <td className="px-6 py-4">Licencia</td>
-                <td className="px-6 py-4">Renovación anual</td>
-                <td className="px-6 py-4 text-gray-500">30 Nov 2024</td>
-                <td className="px-6 py-4">
-                  <span className="px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                    Programado
-                  </span>
-                </td>
-              </tr>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {tableItems.length > 0 ? (
+                tableItems.map((item) => (
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50 transition-colors"
+                  >
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      {item.activo}
+                    </td>
+                    <td className="px-6 py-4">{item.tipo}</td>
+                    <td className="px-6 py-4">{item.detalle}</td>
+                    <td className="px-6 py-4 font-medium">{item.info}</td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold ${item.estadoColor}`}
+                      >
+                        {item.estado}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
+                    No hay elementos para mostrar
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
