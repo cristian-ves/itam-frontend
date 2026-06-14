@@ -1,6 +1,94 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import api from "../services/api";
+
+interface DashboardData {
+  total_activos: number;
+  activos_disponibles: number;
+  activos_asignados: number;
+  activos_en_mantenimiento: number;
+  activos_dados_de_baja: number;
+  licencias_por_vencer: number;
+  asignaciones_activas: number;
+  mantenimientos_proximos: number;
+}
 
 export const DashboardPage = () => {
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const response = await api.get("/dashboard");
+        setData(response.data?.data ?? response.data);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Error al cargar el dashboard");
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboard();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <main className="flex-1 p-8 bg-gray-50 flex items-center justify-center h-full">
+        <div className="bg-white px-6 py-4 rounded-lg shadow-sm border border-gray-100 text-gray-600">
+          Cargando dashboard...
+        </div>
+      </main>
+    );
+  }
+
+  if (error) {
+    return (
+      <main className="flex-1 p-8 bg-gray-50 flex items-center justify-center h-full">
+        <div className="bg-red-50 text-red-600 p-4 rounded-lg shadow-sm border border-red-100">
+          {error}
+        </div>
+      </main>
+    );
+  }
+
+  // Calculamos los porcentajes
+  const total = data?.total_activos || 0;
+  const safeTotal = total > 0 ? total : 1;
+  const assigned = data?.activos_asignados || 0;
+  const available = data?.activos_disponibles || 0;
+  const maintenance = data?.activos_en_mantenimiento || 0;
+  const retired = data?.activos_dados_de_baja || 0;
+  const unclassified = Math.max(
+    total - (assigned + available + maintenance + retired),
+    0,
+  );
+
+  const getPercentage = (val: number) => Math.round((val / safeTotal) * 100);
+  const statusSegments = [
+    { label: "Asignados", value: assigned, color: "#2563eb" },
+    { label: "Disponibles", value: available, color: "#16a34a" },
+    { label: "Mantenimiento", value: maintenance, color: "#f97316" },
+    { label: "Dados de baja", value: retired, color: "#7c3aed" },
+    { label: "Sin clasificar", value: unclassified, color: "#cbd5e1" },
+  ].filter((segment) => segment.value > 0);
+  const ringBackground =
+    statusSegments.length > 0
+      ? `conic-gradient(${statusSegments
+          .map((segment, index) => {
+            const start = statusSegments
+              .slice(0, index)
+              .reduce((sum, current) => sum + current.value, 0);
+            const end = start + segment.value;
+            return `${segment.color} ${(start / total) * 100}% ${(end / total) * 100}%`;
+          })
+          .join(", ")})`
+      : "conic-gradient(#cbd5e1 0% 100%)";
+
   return (
     <main className="flex-1 p-8 bg-gray-50 overflow-y-auto h-full">
       {/* Header */}
@@ -19,7 +107,9 @@ export const DashboardPage = () => {
             <p className="text-sm font-medium text-gray-500 mb-1">
               Total de Activos
             </p>
-            <h3 className="text-3xl font-bold text-gray-900">1,248</h3>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.total_activos || 0}
+            </h3>
             <p className="text-xs text-green-600 mt-2 flex items-center font-medium">
               <svg
                 className="w-3 h-3 mr-1"
@@ -34,7 +124,7 @@ export const DashboardPage = () => {
                   d="M5 10l7-7m0 0l7 7m-7-7v18"
                 ></path>
               </svg>
-              +12 este mes
+              Asignaciones activas: {data?.asignaciones_activas || 0}
             </p>
           </div>
           <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
@@ -60,9 +150,11 @@ export const DashboardPage = () => {
             <p className="text-sm font-medium text-gray-500 mb-1">
               Activos Asignados
             </p>
-            <h3 className="text-3xl font-bold text-gray-900">892</h3>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.activos_asignados || 0}
+            </h3>
             <p className="text-xs text-gray-500 mt-2 font-medium">
-              71% del inventario
+              {getPercentage(assigned)}% del inventario
             </p>
           </div>
           <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center text-green-600">
@@ -88,9 +180,11 @@ export const DashboardPage = () => {
             <p className="text-sm font-medium text-gray-500 mb-1">
               Activos Disponibles
             </p>
-            <h3 className="text-3xl font-bold text-gray-900">315</h3>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.activos_disponibles || 0}
+            </h3>
             <p className="text-xs text-gray-500 mt-2 font-medium">
-              25% del inventario
+              {getPercentage(available)}% del inventario
             </p>
           </div>
           <div className="w-12 h-12 bg-purple-50 rounded-full flex items-center justify-center text-purple-600">
@@ -114,9 +208,11 @@ export const DashboardPage = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between transition-transform hover:-translate-y-1 hover:shadow-md">
           <div>
             <p className="text-sm font-medium text-gray-500 mb-1">
-              En Reparación
+              En Mantenimiento
             </p>
-            <h3 className="text-3xl font-bold text-gray-900">41</h3>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.activos_en_mantenimiento || 0}
+            </h3>
             <p className="text-xs text-red-500 mt-2 flex items-center font-medium">
               <svg
                 className="w-3 h-3 mr-1"
@@ -131,7 +227,8 @@ export const DashboardPage = () => {
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 ></path>
               </svg>
-              Requieren atención
+              Próximos: {data?.mantenimientos_proximos || 0} | Licencias por
+              vencer: {data?.licencias_por_vencer || 0}
             </p>
           </div>
           <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center text-orange-500">
@@ -158,6 +255,127 @@ export const DashboardPage = () => {
         </div>
       </div>
 
+      {/* Secondary KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Card 5: Activos Dados de Baja */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between transition-transform hover:-translate-y-1 hover:shadow-md">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">
+              Dados de Baja
+            </p>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.activos_dados_de_baja || 0}
+            </h3>
+            <p className="text-xs text-gray-500 mt-2 font-medium">
+              {getPercentage(retired)}% del inventario
+            </p>
+          </div>
+          <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center text-gray-600">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 6: Licencias por Vencer */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between transition-transform hover:-translate-y-1 hover:shadow-md">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">
+              Licencias por Vencer
+            </p>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.licencias_por_vencer || 0}
+            </h3>
+            <p className="text-xs text-orange-500 mt-2 font-medium">
+              Requieren atención
+            </p>
+          </div>
+          <div className="w-12 h-12 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 7: Asignaciones Activas */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between transition-transform hover:-translate-y-1 hover:shadow-md">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">
+              Asignaciones Activas
+            </p>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.asignaciones_activas || 0}
+            </h3>
+            <p className="text-xs text-blue-500 mt-2 font-medium">
+              Equipos en uso
+            </p>
+          </div>
+          <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center text-indigo-600">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+
+        {/* Card 8: Mantenimientos Próximos */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center justify-between transition-transform hover:-translate-y-1 hover:shadow-md">
+          <div>
+            <p className="text-sm font-medium text-gray-500 mb-1">
+              Mantenimientos Próximos
+            </p>
+            <h3 className="text-3xl font-bold text-gray-900">
+              {data?.mantenimientos_proximos || 0}
+            </h3>
+            <p className="text-xs text-red-500 mt-2 font-medium">Programados</p>
+          </div>
+          <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center text-rose-600">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
+            </svg>
+          </div>
+        </div>
+      </div>
+
       {/* Middle Section: Charts / Main visual data */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         {/* Placeholder for Bar Chart */}
@@ -175,7 +393,7 @@ export const DashboardPage = () => {
             <div className="flex flex-col items-center group w-full">
               <div className="w-full max-w-[5rem] bg-blue-500 rounded-t-md h-48 transition-all group-hover:bg-blue-600"></div>
               <span className="text-xs text-gray-500 mt-3 font-medium text-center">
-                Equipos de Cómputo
+                Laboratorios
               </span>
             </div>
             <div className="flex flex-col items-center group w-full">
@@ -205,9 +423,16 @@ export const DashboardPage = () => {
             Estado de los Activos
           </h3>
           <div className="flex flex-col items-center justify-center h-40">
-            {/* Mock Pie Chart (Circle with borders) */}
-            <div className="w-32 h-32 rounded-full border-[12px] border-green-500 border-r-blue-500 border-b-purple-500 border-l-orange-400 relative flex items-center justify-center shadow-inner">
-              <span className="text-lg font-bold text-gray-700">100%</span>
+            <div
+              className="w-32 h-32 rounded-full relative flex items-center justify-center shadow-inner"
+              style={{ background: ringBackground }}
+            >
+              <div className="w-20 h-20 rounded-full bg-white flex flex-col items-center justify-center text-center shadow-sm">
+                <span className="text-lg font-bold text-gray-700">{total}</span>
+                <span className="text-[10px] uppercase tracking-wide text-gray-400">
+                  activos
+                </span>
+              </div>
             </div>
           </div>
           <div className="mt-6 space-y-3">
@@ -216,29 +441,48 @@ export const DashboardPage = () => {
                 <span className="w-3 h-3 rounded-full bg-blue-500 mr-2"></span>{" "}
                 Activos Asignados
               </div>
-              <span className="font-semibold text-gray-700">71%</span>
+              <span className="font-semibold text-gray-700">
+                {getPercentage(assigned)}%
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <span className="w-3 h-3 rounded-full bg-green-500 mr-2"></span>{" "}
                 Activos Disponibles
               </div>
-              <span className="font-semibold text-gray-700">25%</span>
+              <span className="font-semibold text-gray-700">
+                {getPercentage(available)}%
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <span className="w-3 h-3 rounded-full bg-orange-400 mr-2"></span>{" "}
                 Activos en Reparación
               </div>
-              <span className="font-semibold text-gray-700">3%</span>
+              <span className="font-semibold text-gray-700">
+                {getPercentage(maintenance)}%
+              </span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <span className="w-3 h-3 rounded-full bg-purple-500 mr-2"></span>{" "}
                 Activos Dados de baja
               </div>
-              <span className="font-semibold text-gray-700">1%</span>
+              <span className="font-semibold text-gray-700">
+                {getPercentage(retired)}%
+              </span>
             </div>
+            {unclassified > 0 ? (
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center">
+                  <span className="w-3 h-3 rounded-full bg-slate-300 mr-2"></span>{" "}
+                  Sin clasificar
+                </div>
+                <span className="font-semibold text-gray-700">
+                  {getPercentage(unclassified)}%
+                </span>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
