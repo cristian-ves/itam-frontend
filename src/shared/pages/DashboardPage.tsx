@@ -10,18 +10,65 @@ interface DashboardData {
   licencias_por_vencer: number;
   asignaciones_activas: number;
   mantenimientos_proximos: number;
+  activos_por_categoria?:
+    | Array<{
+        nombre: string;
+        total: number;
+      }>
+    | Record<string, number>;
+}
+
+interface CategoryBar {
+  label: string;
+  value: number;
+}
+
+interface AssetRecord {
+  categoria?: string;
 }
 
 export const DashboardPage = () => {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [categoryBars, setCategoryBars] = useState<CategoryBar[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
-        const response = await api.get("/dashboard");
-        setData(response.data?.data ?? response.data);
+        const [dashboardResponse, activosResponse] = await Promise.allSettled([
+          api.get("/dashboard"),
+          api.get("/dashboard/activos"),
+        ]);
+
+        if (dashboardResponse.status === "fulfilled") {
+          setData(
+            dashboardResponse.value.data?.data ?? dashboardResponse.value.data,
+          );
+        } else {
+          throw dashboardResponse.reason;
+        }
+
+        if (activosResponse.status === "fulfilled") {
+          const activos =
+            activosResponse.value.data?.data ?? activosResponse.value.data;
+          if (Array.isArray(activos)) {
+            const grouped = activos.reduce<Record<string, number>>(
+              (accumulator, asset: AssetRecord) => {
+                const categoria = asset.categoria?.trim() || "Sin categoría";
+                accumulator[categoria] = (accumulator[categoria] || 0) + 1;
+                return accumulator;
+              },
+              {},
+            );
+
+            setCategoryBars(
+              Object.entries(grouped)
+                .map(([label, value]) => ({ label, value }))
+                .sort((left, right) => right.value - left.value),
+            );
+          }
+        }
       } catch (err) {
         if (err instanceof Error) {
           setError(err.message);
@@ -88,6 +135,10 @@ export const DashboardPage = () => {
           })
           .join(", ")})`
       : "conic-gradient(#cbd5e1 0% 100%)";
+  const maxCategoryValue = Math.max(
+    ...categoryBars.map((category) => category.value),
+    1,
+  );
 
   return (
     <main className="flex-1 p-8 bg-gray-50 overflow-y-auto h-full">
@@ -382,38 +433,66 @@ export const DashboardPage = () => {
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 lg:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold text-gray-800">
-              Activos por Categoría
+              Distribución de Activos
             </h3>
             <button className="text-sm text-blue-600 hover:text-blue-800 font-medium">
               Ver reporte
             </button>
           </div>
-          <div className="h-64 flex items-end justify-around space-x-2 pb-4 border-b border-gray-100">
-            {/* Mock bars */}
-            <div className="flex flex-col items-center group w-full">
-              <div className="w-full max-w-[5rem] bg-blue-500 rounded-t-md h-48 transition-all group-hover:bg-blue-600"></div>
-              <span className="text-xs text-gray-500 mt-3 font-medium text-center">
-                Laboratorios
-              </span>
-            </div>
-            <div className="flex flex-col items-center group w-full">
-              <div className="w-full max-w-[5rem] bg-indigo-400 rounded-t-md h-32 transition-all group-hover:bg-indigo-500"></div>
-              <span className="text-xs text-gray-500 mt-3 font-medium text-center">
-                Servidores
-              </span>
-            </div>
-            <div className="flex flex-col items-center group w-full">
-              <div className="w-full max-w-[5rem] bg-blue-300 rounded-t-md h-24 transition-all group-hover:bg-blue-400"></div>
-              <span className="text-xs text-gray-500 mt-3 font-medium text-center">
-                Proyectores
-              </span>
-            </div>
-            <div className="flex flex-col items-center group w-full">
-              <div className="w-full max-w-[5rem] bg-indigo-200 rounded-t-md h-16 transition-all group-hover:bg-indigo-300"></div>
-              <span className="text-xs text-gray-500 mt-3 font-medium text-center">
-                Licencias
-              </span>
-            </div>
+          <div className="h-64 flex items-end justify-around gap-3 pb-4 border-b border-gray-100">
+            {categoryBars.length > 0 ? (
+              categoryBars.map((category, index) => {
+                const height = Math.max(
+                  (category.value / maxCategoryValue) * 176,
+                  12,
+                );
+                const barColors = [
+                  "bg-blue-500",
+                  "bg-indigo-400",
+                  "bg-sky-400",
+                  "bg-cyan-500",
+                  "bg-emerald-500",
+                  "bg-amber-500",
+                ];
+                const hoverColors = [
+                  "group-hover:bg-blue-600",
+                  "group-hover:bg-indigo-500",
+                  "group-hover:bg-sky-500",
+                  "group-hover:bg-cyan-600",
+                  "group-hover:bg-emerald-600",
+                  "group-hover:bg-amber-600",
+                ];
+
+                return (
+                  <div
+                    key={category.label}
+                    className="flex flex-col items-center group w-full"
+                  >
+                    <div
+                      className={`w-full max-w-[5rem] ${barColors[index % barColors.length]} rounded-t-md transition-all ${hoverColors[index % hoverColors.length]}`}
+                      style={{ height }}
+                      title={`${category.label}: ${category.value}`}
+                    ></div>
+                    <span className="text-xs text-gray-500 mt-3 font-medium text-center">
+                      {category.label}
+                    </span>
+                    <span className="text-[11px] text-gray-400 mt-1 font-semibold">
+                      {category.value}
+                    </span>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-center text-gray-400 border border-dashed border-gray-200 rounded-xl bg-gray-50/60">
+                <p className="text-sm font-medium text-gray-500">
+                  Aún no hay datos de categorías
+                </p>
+                <p className="text-xs mt-1 max-w-sm">
+                  Este gráfico se llenará cuando la API entregue el detalle de
+                  activos por categoría.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
