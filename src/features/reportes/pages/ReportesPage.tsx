@@ -3,33 +3,7 @@ import { useReportes } from "../hooks/useReportes"
 import { ReporteTable } from "../components/ReporteTable"
 import { ExportButton } from "../components/ExportButton"
 import Spinner from "../../../shared/components/atoms/Spinner"
-
-const REPORTES = [
-    { key: "activos", label: "Activos" },
-    { key: "asignaciones", label: "Asignaciones activas" },
-    { key: "laboratorios", label: "Laboratorios" },
-    { key: "servidores", label: "Servidores" },
-    { key: "proyectores", label: "Proyectores" },
-    { key: "licencias", label: "Licencias por vencer" },
-    { key: "mantenimientos", label: "Mantenimientos" },
-]
-
-const EXPORTS = [
-    { tipo: "activos-categoria", label: "Activos por categoría" },
-    { tipo: "activos-asignados", label: "Activos asignados" },
-    { tipo: "mantenimientos", label: "Mantenimientos" },
-    { tipo: "licencias", label: "Licencias por vencer" },
-]
-
-const COLUMNS: Record<string, string[]> = {
-    activos: ["ID", "Código", "Nombre", "Marca", "Modelo", "No. Serie", "Estado", "Fecha compra", "Valor", "Categoría", "Ubicación"],
-    asignaciones: ["ID", "Código activo", "Activo", "Asignado a", "Departamento", "Fecha inicio", "Motivo"],
-    laboratorios: ["ID", "Laboratorio", "Edificio/Salón", "Capacidad", "Estado"],
-    servidores: ["ID", "Servidor", "Edificio/Salón", "Capacidad", "Estado"],
-    proyectores: ["ID", "Proyector", "Edificio/Salón", "Capacidad", "Estado"],
-    licencias: ["ID", "Software", "Versión", "Proveedor", "Fecha vencimiento", "Días restantes"],
-    mantenimientos: ["ID Activo", "Tipo", "Descripción", "Fecha realizado", "Responsable", "Costo"],
-}
+import { COLUMNS, EXPORTS, REPORTES } from "../data/reportsData"
 
 export const ReportesPage = () => {
     const {
@@ -71,7 +45,7 @@ export const ReportesPage = () => {
 
     return (
         <div className="h-full overflow-y-auto">
-            <div className="p-6 max-w-7xl mx-auto space-y-6">
+            <div className="p-6 mx-20 space-y-6">
                 {/* Header */}
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>

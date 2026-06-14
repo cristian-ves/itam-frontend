@@ -1,5 +1,7 @@
+import type { ColumnDef } from "../reportesTypes"
+
 interface Props {
-    columns: string[]
+    columns: ColumnDef[]
     rows: Record<string, any>[]
 }
 
@@ -19,10 +21,10 @@ export const ReporteTable = ({ columns, rows }: Props) => {
                     <tr>
                         {columns.map((col) => (
                             <th
-                                key={col}
+                                key={col.label}
                                 className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap"
                             >
-                                {col}
+                                {col.label}
                             </th>
                         ))}
                     </tr>
@@ -32,7 +34,11 @@ export const ReporteTable = ({ columns, rows }: Props) => {
                         <tr key={i} className="hover:bg-gray-50 transition-colors">
                             {Object.values(row).map((val, j) => (
                                 <td key={j} className="px-4 py-3 text-gray-700 whitespace-nowrap">
-                                    {val !== null && val !== undefined ? String(val) : "—"}
+                                    {columns[j]?.format
+                                        ? columns[j].format!(val)
+                                        : val !== null && val !== undefined
+                                            ? String(val)
+                                            : "—"}
                                 </td>
                             ))}
                         </tr>

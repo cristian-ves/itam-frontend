@@ -39,7 +39,7 @@ export const useReportes = () => {
         ReporteMantenimiento[]
     >([]);
     const [loading, setLoading] = useState(false);
-    const [exportLoading, setExportLoading] = useState(false);
+    const [exportLoading, setExportLoading] = useState<string | null>(null);
 
     const fetchReporte = async (tipo: string) => {
         setLoading(true);
@@ -77,7 +77,7 @@ export const useReportes = () => {
     };
 
     const exportExcel = async (tipo: string) => {
-        setExportLoading(true);
+        setExportLoading(tipo);
         try {
             let blob: Blob;
             let filename: string;
@@ -110,7 +110,7 @@ export const useReportes = () => {
                 err.response?.data?.message ?? "Error al exportar reporte";
             toast.error(msg);
         } finally {
-            setExportLoading(false);
+            setExportLoading(null);
         }
     };
 
