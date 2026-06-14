@@ -1,5 +1,8 @@
 import { useState, useEffect } from "react";
 import api from "../../../shared/services/api";
+import { AddLaboratorioModal } from "../components/AddLaboratorioModal"; // Importa el nuevo componente modal
+import { DetallesLaboratorioModal } from "../components/DetallesLaboratorioModal";
+import { toast } from "sonner";
 
 interface Laboratorio {
   id: number;
@@ -13,7 +16,7 @@ interface Laboratorio {
 const StatusBadge = ({ estado }: { estado: string }) => {
   const baseClasses =
     "px-2 inline-flex text-xs leading-5 font-semibold rounded-full";
-  let colorClasses = "";
+  let colorClasses;
 
   switch (estado.toLowerCase()) {
     case "activo":
@@ -33,14 +36,24 @@ const StatusBadge = ({ estado }: { estado: string }) => {
 export const LaboratoriosPage = () => {
   const [laboratorios, setLaboratorios] = useState<Laboratorio[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
+  const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
+  const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [labToDelete, setLabToDelete] = useState<Laboratorio | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchLaboratorios = async () => {
       try {
         const response = await api.get("/dashboard/laboratorios");
         setLaboratorios(response.data);
-      } catch (error) {
-        console.error("Error fetching laboratorios:", error);
+      } catch (err) {
+        console.error("Error fetching laboratorios:", err);
+        setError(
+          "No se pudieron cargar los laboratorios. Por favor, inténtalo de nuevo más tarde.",
+        );
       } finally {
         setLoading(false);
       }
@@ -48,6 +61,85 @@ export const LaboratoriosPage = () => {
 
     fetchLaboratorios();
   }, []);
+
+  const handleAddLaboratorioClick = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleDetallesClick = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedLabId(id);
+    setIsDetallesModalOpen(true);
+  };
+
+  const handleCloseDetallesModal = () => {
+    setIsDetallesModalOpen(false);
+    setSelectedLabId(null);
+  };
+
+  const handleDeleteClick = (lab: Laboratorio, e: React.MouseEvent) => {
+    e.preventDefault();
+    setLabToDelete(lab);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (isDeleting) {
+      return;
+    }
+
+    setIsDeleteModalOpen(false);
+    setLabToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!labToDelete) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      await api.delete(`/ubicacion/${labToDelete.id}`);
+      setLaboratorios((currentLaboratorios) =>
+        currentLaboratorios.filter((lab) => lab.id !== labToDelete.id),
+      );
+      toast.success(
+        `Laboratorio "${labToDelete.nombre_lab}" eliminado correctamente`,
+      );
+      setIsDeleteModalOpen(false);
+      setLabToDelete(null);
+    } catch (err) {
+      console.error("Error al eliminar laboratorio:", err);
+      toast.error("No se pudo eliminar el laboratorio. Intenta nuevamente.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Función para volver a cargar los laboratorios después de una adición exitosa
+  const handleLaboratorioAdded = () => {
+    setLoading(true); // Muestra el estado de carga nuevamente
+    setError(null); // Limpia cualquier error previo
+    const fetchLaboratorios = async () => {
+      // Vuelve a obtener los datos
+      try {
+        const response = await api.get("/dashboard/laboratorios");
+        setLaboratorios(response.data);
+      } catch (err) {
+        console.error("Error al cargar laboratorios después de añadir:", err);
+        setError(
+          "No se pudieron cargar los laboratorios actualizados. Por favor, recarga la página.",
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLaboratorios();
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -61,6 +153,7 @@ export const LaboratoriosPage = () => {
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
+            onClick={handleAddLaboratorioClick} // Asigna el manejador de clic
             className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Agregar laboratorio
@@ -122,6 +215,15 @@ export const LaboratoriosPage = () => {
                         Cargando laboratorios...
                       </td>
                     </tr>
+                  ) : error ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-4 text-center text-sm text-red-600"
+                      >
+                        {error}
+                      </td>
+                    </tr>
                   ) : laboratorios.length === 0 ? (
                     <tr>
                       <td
@@ -160,17 +262,19 @@ export const LaboratoriosPage = () => {
                           <a
                             href="#"
                             className="ml-4 text-gray-600 hover:text-gray-900"
+                            onClick={(e) => handleDetallesClick(lab.id, e)}
                           >
                             Detalles
                             <span className="sr-only">, {lab.nombre_lab}</span>
                           </a>
-                          <a
-                            href="#"
-                            className="ml-4 text-red-600 hover:text-red-900"
+                          <button
+                            type="button"
+                            className="ml-4 inline-flex items-center rounded-md bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 hover:text-red-800"
+                            onClick={(e) => handleDeleteClick(lab, e)}
                           >
                             Eliminar
                             <span className="sr-only">, {lab.nombre_lab}</span>
-                          </a>
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -181,6 +285,67 @@ export const LaboratoriosPage = () => {
           </div>
         </div>
       </div>
+      <AddLaboratorioModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onAddSuccess={handleLaboratorioAdded}
+      />
+      <DetallesLaboratorioModal
+        isOpen={isDetallesModalOpen}
+        onClose={handleCloseDetallesModal}
+        laboratorioId={selectedLabId}
+      />
+      {isDeleteModalOpen && labToDelete ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
+          <div
+            className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm"
+            onClick={handleCloseDeleteModal}
+          ></div>
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-red-100 bg-white shadow-2xl shadow-slate-950/20">
+            <div className="border-b border-red-100 bg-red-50 px-6 py-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-red-500">
+                Confirmar eliminación
+              </p>
+              <h3 className="mt-2 text-xl font-bold text-slate-900">
+                Eliminar laboratorio
+              </h3>
+              <p className="mt-2 text-sm text-slate-600">
+                Estás por eliminar{" "}
+                <span className="font-semibold text-slate-900">
+                  {labToDelete.nombre_lab}
+                </span>
+                . Esta acción no se puede deshacer.
+              </p>
+            </div>
+
+            <div className="px-6 py-5">
+              <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/70 px-4 py-4 text-sm text-red-700">
+                Si continúas, el laboratorio se eliminará permanentemente del
+                sistema.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+              <button
+                type="button"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={handleCloseDeleteModal}
+                disabled={isDeleting}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-600/20 transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+              >
+                {isDeleting ? "Eliminando..." : "Eliminar laboratorio"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
