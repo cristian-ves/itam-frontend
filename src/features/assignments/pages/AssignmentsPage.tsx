@@ -5,6 +5,7 @@ import { AssignmentsTable } from "../components/AssignmentsTable"
 import { AssignmentModal } from "../components/AssignmentModal"
 import Spinner from "../../../shared/components/atoms/Spinner"
 import type { Asignacion } from "../assignmentsService"
+import { ConfirmModal } from "../../../shared/components/atoms/ConfirmModal"
 
 export const AssignmentsPage = () => {
     const { asignaciones, loading, error, create, update, remove } = useAssignments()
@@ -26,9 +27,17 @@ export const AssignmentsPage = () => {
         setModalOpen(false)
     }
 
-    const handleDelete = async (id: number) => {
-        const confirm = window.confirm("¿Estás seguro de eliminar esta asignación?")
-        if (confirm) await remove(id)
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const handleDelete = (id: number) => {
+        setDeleteId(id)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (deleteId !== null) {
+            await remove(deleteId)
+            setDeleteId(null)
+        }
     }
 
     return (
@@ -74,6 +83,15 @@ export const AssignmentsPage = () => {
                     onClose={handleClose}
                     onCreate={create}
                     onUpdate={update}
+                />
+            )}
+
+            {deleteId !== null && (
+                <ConfirmModal
+                    title="Eliminar asignación"
+                    message="¿Estás seguro de que deseas eliminar esta asignación? Esta acción no se puede deshacer."
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setDeleteId(null)}
                 />
             )}
         </div>

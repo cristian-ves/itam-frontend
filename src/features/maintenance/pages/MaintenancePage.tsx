@@ -6,6 +6,7 @@ import { MaintenanceModal } from "../components/MaintenanceModal"
 import { MaintenanceAlerts } from "../components/MaintenanceAlerts"
 import Spinner from "../../../shared/components/atoms/Spinner"
 import type { Mantenimiento } from "../maintenanceService"
+import { ConfirmModal } from "../../../shared/components/atoms/ConfirmModal"
 
 export const MaintenancePage = () => {
     const {
@@ -37,11 +38,17 @@ export const MaintenancePage = () => {
         setModalOpen(false)
     }
 
-    const handleDelete = async (id: number) => {
-        const confirm = window.confirm(
-            "¿Estás seguro de eliminar este mantenimiento?",
-        )
-        if (confirm) await remove(id)
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const handleDelete = (id: number) => {
+        setDeleteId(id)
+    }
+
+    const handleConfirmDelete = async () => {
+        if (deleteId !== null) {
+            await remove(deleteId)
+            setDeleteId(null)
+        }
     }
 
     return (
@@ -92,6 +99,15 @@ export const MaintenancePage = () => {
                     onClose={handleClose}
                     onCreate={create}
                     onUpdate={update}
+                />
+            )}
+
+            {deleteId !== null && (
+                <ConfirmModal
+                    title="Eliminar mantenimiento"
+                    message="¿Estás seguro de que deseas eliminar este mantenimiento? Esta acción no se puede deshacer."
+                    onConfirm={handleConfirmDelete}
+                    onCancel={() => setDeleteId(null)}
                 />
             )}
         </div>
