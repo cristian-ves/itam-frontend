@@ -1,34 +1,13 @@
-// Datos de ejemplo
-const laboratorios = [
-  {
-    id: "LAB-001",
-    nombre: "Laboratorio de Redes",
-    ubicacion: "Edificio A / Salón 101",
-    capacidad: 30,
-    estado: "Activo",
-  },
-  {
-    id: "LAB-002",
-    nombre: "Laboratorio de Cómputo Avanzado",
-    ubicacion: "Edificio B / Salón 203",
-    capacidad: 40,
-    estado: "Activo",
-  },
-  {
-    id: "LAB-003",
-    nombre: "Laboratorio de Química",
-    ubicacion: "Edificio C / Salón 305",
-    capacidad: 25,
-    estado: "Inactivo",
-  },
-  {
-    id: "LAB-004",
-    nombre: "Laboratorio de Física",
-    ubicacion: "Edificio A / Salón 102",
-    capacidad: 35,
-    estado: "Mantenimiento",
-  },
-];
+import { useState, useEffect } from "react";
+import api from "../../../shared/services/api";
+
+interface Laboratorio {
+  id: number;
+  nombre_lab: string;
+  edificio_salon: string;
+  capacidad: number;
+  estado: string;
+}
 
 // Componente para la insignia de estado
 const StatusBadge = ({ estado }: { estado: string }) => {
@@ -52,6 +31,24 @@ const StatusBadge = ({ estado }: { estado: string }) => {
 };
 
 export const LaboratoriosPage = () => {
+  const [laboratorios, setLaboratorios] = useState<Laboratorio[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLaboratorios = async () => {
+      try {
+        const response = await api.get("/dashboard/laboratorios");
+        setLaboratorios(response.data);
+      } catch (error) {
+        console.error("Error fetching laboratorios:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLaboratorios();
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
@@ -116,47 +113,68 @@ export const LaboratoriosPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {laboratorios.map((lab) => (
-                    <tr key={lab.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {lab.id}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {lab.nombre}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {lab.ubicacion}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {lab.capacidad}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <StatusBadge estado={lab.estado} />
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a
-                          href="#"
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar<span className="sr-only">, {lab.nombre}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-gray-600 hover:text-gray-900"
-                        >
-                          Detalles
-                          <span className="sr-only">, {lab.nombre}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-red-600 hover:text-red-900"
-                        >
-                          Eliminar
-                          <span className="sr-only">, {lab.nombre}</span>
-                        </a>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        Cargando laboratorios...
                       </td>
                     </tr>
-                  ))}
+                  ) : laboratorios.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        No hay laboratorios registrados.
+                      </td>
+                    </tr>
+                  ) : (
+                    laboratorios.map((lab) => (
+                      <tr key={lab.id}>
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          {lab.id}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {lab.nombre_lab}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {lab.edificio_salon}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {lab.capacidad}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <StatusBadge estado={lab.estado} />
+                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <a
+                            href="#"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Editar
+                            <span className="sr-only">, {lab.nombre_lab}</span>
+                          </a>
+                          <a
+                            href="#"
+                            className="ml-4 text-gray-600 hover:text-gray-900"
+                          >
+                            Detalles
+                            <span className="sr-only">, {lab.nombre_lab}</span>
+                          </a>
+                          <a
+                            href="#"
+                            className="ml-4 text-red-600 hover:text-red-900"
+                          >
+                            Eliminar
+                            <span className="sr-only">, {lab.nombre_lab}</span>
+                          </a>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

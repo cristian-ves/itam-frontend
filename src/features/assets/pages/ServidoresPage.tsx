@@ -1,38 +1,14 @@
-// Datos de ejemplo
-const servidores = [
-  {
-    id: "SRV-001",
-    nombre: "Servidor Web Principal",
-    ip: "192.168.1.10",
-    so: "Ubuntu 22.04 LTS",
-    mantenimiento: "2024-05-10",
-    estado: "Encendido",
-  },
-  {
-    id: "SRV-002",
-    nombre: "Base de Datos",
-    ip: "192.168.1.12",
-    so: "Windows Server 2022",
-    mantenimiento: "2024-04-22",
-    estado: "Encendido",
-  },
-  {
-    id: "SRV-003",
-    nombre: "Servidor de Respaldo",
-    ip: "192.168.1.15",
-    so: "Debian 11",
-    mantenimiento: "2024-05-01",
-    estado: "Apagado",
-  },
-  {
-    id: "SRV-004",
-    nombre: "Servidor de Pruebas",
-    ip: "192.168.1.20",
-    so: "CentOS 8",
-    mantenimiento: "2024-03-15",
-    estado: "Fallo",
-  },
-];
+import { useState, useEffect } from "react";
+import api from "../../../shared/services/api";
+
+interface Servidor {
+  id: number;
+  nombre: string;
+  direccion_ip: string;
+  sistema_operativo: string;
+  estado: string;
+  ultimo_mantenimiento_fecha: string | null;
+}
 
 // Componente para la insignia de estado
 const StatusBadge = ({ estado }: { estado: string }) => {
@@ -41,8 +17,15 @@ const StatusBadge = ({ estado }: { estado: string }) => {
   let colorClasses = "";
 
   switch (estado.toLowerCase()) {
+    case "disponible":
     case "encendido":
       colorClasses = "bg-green-100 text-green-800";
+      break;
+    case "asignado":
+      colorClasses = "bg-blue-100 text-blue-800";
+      break;
+    case "en mantenimiento":
+      colorClasses = "bg-yellow-100 text-yellow-800";
       break;
     case "apagado":
       colorClasses = "bg-gray-100 text-gray-800";
@@ -59,6 +42,24 @@ const StatusBadge = ({ estado }: { estado: string }) => {
 };
 
 export const ServidoresPage = () => {
+  const [servidores, setServidores] = useState<Servidor[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServidores = async () => {
+      try {
+        const response = await api.get("/dashboard/servidores");
+        setServidores(response.data);
+      } catch (error) {
+        console.error("Error fetching servidores:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServidores();
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
@@ -129,44 +130,68 @@ export const ServidoresPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {servidores.map((server) => (
-                    <tr key={server.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {server.id}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {server.nombre}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {server.ip}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {server.so}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {server.mantenimiento}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <StatusBadge estado={server.estado} />
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a
-                          href="#"
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                          <span className="sr-only">, {server.nombre}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-red-600 hover:text-red-900"
-                        >
-                          Eliminar
-                          <span className="sr-only">, {server.nombre}</span>
-                        </a>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        Cargando servidores...
                       </td>
                     </tr>
-                  ))}
+                  ) : servidores.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        No hay servidores registrados.
+                      </td>
+                    </tr>
+                  ) : (
+                    servidores.map((server) => (
+                      <tr key={server.id}>
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          {server.id}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {server.nombre}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {server.direccion_ip}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {server.sistema_operativo}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {server.ultimo_mantenimiento_fecha
+                            ? new Date(
+                                server.ultimo_mantenimiento_fecha,
+                              ).toLocaleDateString()
+                            : "N/A"}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <StatusBadge estado={server.estado} />
+                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <a
+                            href="#"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Editar
+                            <span className="sr-only">, {server.nombre}</span>
+                          </a>
+                          <a
+                            href="#"
+                            className="ml-4 text-red-600 hover:text-red-900"
+                          >
+                            Eliminar
+                            <span className="sr-only">, {server.nombre}</span>
+                          </a>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

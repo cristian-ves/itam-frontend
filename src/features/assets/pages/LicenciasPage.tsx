@@ -1,54 +1,31 @@
-// Datos de ejemplo
-const licencias = [
-  {
-    id: "LIC-001",
-    software: "Microsoft Office 2021",
-    clave: "XXXXX-XXXXX-XXXXX-XXXXX-12345",
-    diasRestantes: 365,
-    estado: "Activa",
-  },
-  {
-    id: "LIC-002",
-    software: "Adobe Photoshop CC",
-    clave: "YYYYY-YYYYY-YYYYY-YYYYY-67890",
-    diasRestantes: 25,
-    estado: "Activa",
-  },
-  {
-    id: "LIC-003",
-    software: "Windows 11 Pro",
-    clave: "ZZZZZ-ZZZZZ-ZZZZZ-ZZZZZ-11223",
-    diasRestantes: 0,
-    estado: "Vencida",
-  },
-  {
-    id: "LIC-004",
-    software: "AutoCAD 2023",
-    clave: "AAAAA-AAAAA-AAAAA-AAAAA-44556",
-    diasRestantes: 120,
-    estado: "Activa",
-  },
-];
+import { useState, useEffect } from "react";
+import api from "../../../shared/services/api";
+
+interface Licencia {
+  id: number;
+  software: string;
+  version: string;
+  proveedor: string;
+  fecha_vencimiento: string;
+  dias_restantes: number;
+}
 
 // Componente para la insignia de estado
-const StatusBadge = ({ estado }: { estado: string }) => {
+const StatusBadge = ({ diasRestantes }: { diasRestantes: number }) => {
   const baseClasses =
     "px-2 inline-flex text-xs leading-5 font-semibold rounded-full";
   let colorClasses = "";
+  let estadoText = "";
 
-  switch (estado.toLowerCase()) {
-    case "activa":
-      colorClasses = "bg-green-100 text-green-800";
-      break;
-    case "vencida":
-      colorClasses = "bg-red-100 text-red-800";
-      break;
-    default:
-      colorClasses = "bg-gray-100 text-gray-800";
-      break;
+  if (diasRestantes > 0) {
+    colorClasses = "bg-green-100 text-green-800";
+    estadoText = "Activa";
+  } else {
+    colorClasses = "bg-red-100 text-red-800";
+    estadoText = "Vencida";
   }
 
-  return <span className={`${baseClasses} ${colorClasses}`}>{estado}</span>;
+  return <span className={`${baseClasses} ${colorClasses}`}>{estadoText}</span>;
 };
 
 // Componente para la celda de Días Restantes
@@ -63,6 +40,24 @@ const DiasRestantesCell = ({ dias }: { dias: number }) => {
 };
 
 export const LicenciasPage = () => {
+  const [licencias, setLicencias] = useState<Licencia[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLicencias = async () => {
+      try {
+        const response = await api.get("/dashboard/licencias");
+        setLicencias(response.data);
+      } catch (error) {
+        console.error("Error fetching licencias:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLicencias();
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
@@ -94,19 +89,25 @@ export const LicenciasPage = () => {
                       scope="col"
                       className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
                     >
-                      No.
+                      ID
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                     >
-                      Nombre del Software
+                      Software
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                     >
-                      Clave del Producto
+                      Proveedor
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                    >
+                      Fecha Vencimiento
                     </th>
                     <th
                       scope="col"
@@ -129,48 +130,71 @@ export const LicenciasPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {licencias.map((lic) => (
-                    <tr key={lic.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {lic.id}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {lic.software}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-mono">
-                        {lic.clave}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <DiasRestantesCell dias={lic.diasRestantes} />
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <StatusBadge estado={lic.estado} />
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a
-                          href="#"
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                          <span className="sr-only">, {lic.software}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-yellow-600 hover:text-yellow-900"
-                        >
-                          Renovar
-                          <span className="sr-only">, {lic.software}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-red-600 hover:text-red-900"
-                        >
-                          Eliminar
-                          <span className="sr-only">, {lic.software}</span>
-                        </a>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        Cargando licencias...
                       </td>
                     </tr>
-                  ))}
+                  ) : licencias.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        No hay licencias registradas.
+                      </td>
+                    </tr>
+                  ) : (
+                    licencias.map((lic) => (
+                      <tr key={lic.id}>
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          {lic.id}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {lic.software} {lic.version}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {lic.proveedor}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {new Date(lic.fecha_vencimiento).toLocaleDateString()}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm">
+                          <DiasRestantesCell dias={lic.dias_restantes} />
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <StatusBadge diasRestantes={lic.dias_restantes} />
+                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                          <a
+                            href="#"
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Editar
+                            <span className="sr-only">, {lic.software}</span>
+                          </a>
+                          <a
+                            href="#"
+                            className="ml-4 text-yellow-600 hover:text-yellow-900"
+                          >
+                            Renovar
+                            <span className="sr-only">, {lic.software}</span>
+                          </a>
+                          <a
+                            href="#"
+                            className="ml-4 text-red-600 hover:text-red-900"
+                          >
+                            Eliminar
+                            <span className="sr-only">, {lic.software}</span>
+                          </a>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
