@@ -9,6 +9,7 @@ const navLinks = [
   { to: "/activos/laboratorios", text: "Activos" },
   { to: "/asignaciones", text: "Asignaciones" },
   { to: "/mantenimiento", text: "Mantenimiento" },
+  { to: "/reportes", text: "Reportes" },
 ];
 
 export const Navbar = () => {
@@ -29,10 +30,9 @@ export const Navbar = () => {
             key={to}
             to={to}
             className={({ isActive }) =>
-              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${
-                isActive
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`
             }
           >
@@ -48,10 +48,9 @@ export const Navbar = () => {
         <NavLink
           to="/perfil"
           className={({ isActive }) =>
-            `cursor-pointer p-1.5 rounded-md transition-colors duration-150 ${
-              isActive
-                ? "bg-gray-700 text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            `cursor-pointer p-1.5 rounded-md transition-colors duration-150 ${isActive
+              ? "bg-gray-700 text-white"
+              : "text-gray-400 hover:text-white hover:bg-gray-800"
             }`
           }
         >

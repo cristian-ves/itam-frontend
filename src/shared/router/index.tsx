@@ -19,6 +19,7 @@ import {
   ServidoresPage,
 } from "../../features/assets/pages";
 import { PerfilPage } from "../../features/auth/pages/PerfilPage";
+import { ReportesPage } from "../../features/reportes/pages/ReportesPage";
 
 const router = createBrowserRouter([
   // Always public
@@ -49,6 +50,7 @@ const router = createBrowserRouter([
       },
 
       { path: "/perfil", element: <PerfilPage /> },
+      { path: "/reportes", element: <ReportesPage /> },
       { path: "/asignaciones", element: <AssignmentsPage /> },
       { path: "/mantenimiento", element: <MaintenancePage /> },
     ],
