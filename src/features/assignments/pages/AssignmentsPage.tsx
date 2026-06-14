@@ -5,7 +5,7 @@ import { AssignmentsTable } from "../components/AssignmentsTable"
 import { AssignmentModal } from "../components/AssignmentModal"
 import Spinner from "../../../shared/components/atoms/Spinner"
 import type { Asignacion } from "../assignmentsService"
-import { ConfirmModal } from "../../../shared/components/atoms/ConfirmModal"
+import { ConfirmModal } from "../../../shared/components/molecules/ConfirmModal"
 
 export const AssignmentsPage = () => {
     const { asignaciones, loading, error, create, update, remove } = useAssignments()

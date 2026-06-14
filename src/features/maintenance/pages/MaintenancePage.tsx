@@ -6,7 +6,7 @@ import { MaintenanceModal } from "../components/MaintenanceModal"
 import { MaintenanceAlerts } from "../components/MaintenanceAlerts"
 import Spinner from "../../../shared/components/atoms/Spinner"
 import type { Mantenimiento } from "../maintenanceService"
-import { ConfirmModal } from "../../../shared/components/atoms/ConfirmModal"
+import { ConfirmModal } from "../../../shared/components/molecules/ConfirmModal"
 
 export const MaintenancePage = () => {
     const {
