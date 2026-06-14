@@ -22,6 +22,7 @@ import { PerfilPage } from "../../features/auth/pages/PerfilPage";
 import { ReportesPage } from "../../features/reportes/pages/ReportesPage";
 import { UsuariosPage } from "../../features/users/pages/UsuariosPage";
 import { AdminRoute } from "./AdminRoute";
+import { AuxAdminRoute } from "./AuxAdminRoute";
 
 const router = createBrowserRouter([
   // Always public
@@ -55,8 +56,11 @@ const router = createBrowserRouter([
         element: <AdminRoute />,
         children: [{ path: "/usuarios", element: <UsuariosPage /> }],
       },
+      {
+        element: <AuxAdminRoute />,
+        children: [{ path: "/reportes", element: <ReportesPage /> }],
+      },
       { path: "/perfil", element: <PerfilPage /> },
-      { path: "/reportes", element: <ReportesPage /> },
       { path: "/asignaciones", element: <AssignmentsPage /> },
       { path: "/mantenimiento", element: <MaintenancePage /> },
     ],
