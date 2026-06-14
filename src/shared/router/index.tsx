@@ -20,6 +20,8 @@ import {
 } from "../../features/assets/pages";
 import { PerfilPage } from "../../features/auth/pages/PerfilPage";
 import { ReportesPage } from "../../features/reportes/pages/ReportesPage";
+import { UsuariosPage } from "../../features/users/pages/UsuariosPage";
+import { AdminRoute } from "./AdminRoute";
 
 const router = createBrowserRouter([
   // Always public
@@ -49,6 +51,10 @@ const router = createBrowserRouter([
         ],
       },
 
+      {
+        element: <AdminRoute />,
+        children: [{ path: "/usuarios", element: <UsuariosPage /> }],
+      },
       { path: "/perfil", element: <PerfilPage /> },
       { path: "/reportes", element: <ReportesPage /> },
       { path: "/asignaciones", element: <AssignmentsPage /> },
