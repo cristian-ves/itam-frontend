@@ -179,35 +179,7 @@ export const ProyectoresPage = () => {
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           <StatusBadge estado={proyector.estado} />
                         </td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <a
-                            href="#"
-                            className="text-indigo-600 hover:text-indigo-900"
-                          >
-                            Editar
-                            <span className="sr-only">
-                              , {proyector.nombre}
-                            </span>
-                          </a>
-                          <a
-                            href="#"
-                            className="ml-4 text-yellow-600 hover:text-yellow-900"
-                          >
-                            Reportar falla
-                            <span className="sr-only">
-                              , {proyector.nombre}
-                            </span>
-                          </a>
-                          <a
-                            href="#"
-                            className="ml-4 text-red-600 hover:text-red-900"
-                          >
-                            Eliminar
-                            <span className="sr-only">
-                              , {proyector.nombre}
-                            </span>
-                          </a>
-                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"></td>
                       </tr>
                     ))
                   )}
