@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../../../shared/services/api";
+import { AddProyectorModal } from "../components/AddProyectorModal";
 
 interface Proyector {
   id: number;
@@ -41,21 +42,41 @@ const StatusBadge = ({ estado }: { estado: string }) => {
 export const ProyectoresPage = () => {
   const [proyectores, setProyectores] = useState<Proyector[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const fetchProyectores = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const response = await api.get("/dashboard/proyectores");
+      const proyectoresData = response.data?.data ?? response.data ?? [];
+      setProyectores(Array.isArray(proyectoresData) ? proyectoresData : []);
+    } catch (error) {
+      console.error("Error fetching proyectores:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchProyectores = async () => {
-      try {
-        const response = await api.get("/dashboard/proyectores");
-        setProyectores(response.data);
-      } catch (error) {
-        console.error("Error fetching proyectores:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    const timer = window.setTimeout(() => {
+      void fetchProyectores();
+    }, 0);
 
-    fetchProyectores();
-  }, []);
+    return () => window.clearTimeout(timer);
+  }, [fetchProyectores]);
+
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleProyectorAdded = () => {
+    void fetchProyectores();
+  };
 
   return (
     <div className="p-4 sm:p-6 lg:p-8">
@@ -69,6 +90,7 @@ export const ProyectoresPage = () => {
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
+            onClick={handleOpenAddModal}
             className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
             Agregar proyector
@@ -195,6 +217,12 @@ export const ProyectoresPage = () => {
           </div>
         </div>
       </div>
+
+      <AddProyectorModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onAddSuccess={handleProyectorAdded}
+      />
     </div>
   );
 };
