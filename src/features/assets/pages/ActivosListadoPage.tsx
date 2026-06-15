@@ -114,6 +114,9 @@ export const ActivosListadoPage = () => {
     <div className="p-4">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">Todos los Activos</h2>
+        <p className="mt-2 text-sm text-gray-700">
+          Servidores y Proyectores se crean aquí
+        </p>
         <button
           className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
           onClick={handleOpenAddModal}

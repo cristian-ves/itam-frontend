@@ -7,10 +7,10 @@ interface SidebarLink {
 
 const sidebarLinks: SidebarLink[] = [
   { to: "/activos/listado", text: "Listado" },
-  { to: "/activos/laboratorios", text: "Laboratorios" },
+  { to: "/activos/laboratorios", text: "Laboratorios/Ubicaciones" },
+  { to: "/activos/licencias", text: "Licencias de Software" },
   { to: "/activos/servidores", text: "Servidores" },
   { to: "/activos/proyectores", text: "Proyectores" },
-  { to: "/activos/licencias", text: "Licencias de Software" },
 ];
 
 export const Sidebar = () => {

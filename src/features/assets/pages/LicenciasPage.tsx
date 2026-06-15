@@ -1,23 +1,47 @@
 import { useState, useEffect } from "react";
 import api from "../../../shared/services/api";
+import { DetallesLicenciaModal } from "../components/DetallesLicenciaModal";
+import { AddLicenciaModal } from "../components/AddLicenciaModal";
 
 interface Licencia {
   id: number;
   software: string;
   version: string;
   proveedor: string;
-  fecha_vencimiento: string;
-  dias_restantes: number;
+  cantidad_licencias: number;
+  tipo_licencia: string;
+  fecha_adquisicion: string;
+  fecha_vencimiento: string | null;
+  costo: string;
+  notas: string;
+  clave_producto: string;
 }
 
+const calculateDiasRestantes = (
+  fecha_vencimiento: string | null,
+): number | null => {
+  if (!fecha_vencimiento) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const vencimiento = new Date(fecha_vencimiento);
+  // Add timezone offset to avoid being off by one day for UTC dates
+  const userTimezoneOffset = vencimiento.getTimezoneOffset() * 60000;
+  const diffTime = vencimiento.getTime() + userTimezoneOffset - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
+
 // Componente para la insignia de estado
-const StatusBadge = ({ diasRestantes }: { diasRestantes: number }) => {
+const StatusBadge = ({ diasRestantes }: { diasRestantes: number | null }) => {
   const baseClasses =
     "px-2 inline-flex text-xs leading-5 font-semibold rounded-full";
   let colorClasses = "";
   let estadoText = "";
 
-  if (diasRestantes > 0) {
+  if (diasRestantes === null) {
+    colorClasses = "bg-green-100 text-green-800";
+    estadoText = "Activa";
+  } else if (diasRestantes > 0) {
     colorClasses = "bg-green-100 text-green-800";
     estadoText = "Activa";
   } else {
@@ -29,7 +53,10 @@ const StatusBadge = ({ diasRestantes }: { diasRestantes: number }) => {
 };
 
 // Componente para la celda de Días Restantes
-const DiasRestantesCell = ({ dias }: { dias: number }) => {
+const DiasRestantesCell = ({ dias }: { dias: number | null }) => {
+  if (dias === null) {
+    return <span className="text-gray-500">N/A</span>;
+  }
   if (dias <= 0) {
     return <span className="font-medium text-red-600">0 días</span>;
   }
@@ -43,18 +70,42 @@ export const LicenciasPage = () => {
   const [licencias, setLicencias] = useState<Licencia[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchLicencias = async () => {
-      try {
-        const response = await api.get("/licencia");
-        setLicencias(response.data);
-      } catch (error) {
-        console.error("Error fetching licencias:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Estados para el modal de detalles
+  const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
+  const [selectedLicenciaId, setSelectedLicenciaId] = useState<number | null>(
+    null,
+  );
 
+  // Estado para el modal de agregar
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const handleOpenDetalles = (id: number) => {
+    setSelectedLicenciaId(id);
+    setIsDetallesModalOpen(true);
+  };
+
+  const handleCloseDetalles = () => {
+    setIsDetallesModalOpen(false);
+    setSelectedLicenciaId(null);
+  };
+
+  const fetchLicencias = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/licencia");
+      setLicencias(response.data);
+    } catch (error) {
+      console.error("Error fetching licencias:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddSuccess = () => {
+    fetchLicencias();
+  };
+
+  useEffect(() => {
     fetchLicencias();
   }, []);
 
@@ -66,19 +117,20 @@ export const LicenciasPage = () => {
             Licencias de Software
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Lista de todas las licencias de software registradas en el sistema.
+            Lista completa de todas las licencias de software.
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
             className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            onClick={() => setIsAddModalOpen(true)}
           >
             Agregar licencia
           </button>
         </div>
-      </div>
-      <div className="mt-8 flow-root">
+        </div>
+        <div className="mt-8 flow-root">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
@@ -149,36 +201,77 @@ export const LicenciasPage = () => {
                       </td>
                     </tr>
                   ) : (
-                    licencias.map((lic) => (
-                      <tr key={lic.id}>
-                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                          {lic.id}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {lic.software} {lic.version}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {lic.proveedor}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {new Date(lic.fecha_vencimiento).toLocaleDateString()}
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm">
-                          <DiasRestantesCell dias={lic.dias_restantes} />
-                        </td>
-                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          <StatusBadge diasRestantes={lic.dias_restantes} />
-                        </td>
-                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"></td>
-                      </tr>
-                    ))
+                    licencias.map((lic) => {
+                      const diasRestantes = calculateDiasRestantes(
+                        lic.fecha_vencimiento,
+                      );
+                      return (
+                        <tr key={lic.id}>
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {lic.id}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {lic.software} {lic.version}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {lic.proveedor}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {lic.fecha_vencimiento
+                              ? new Date(
+                                  lic.fecha_vencimiento,
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            <DiasRestantesCell dias={diasRestantes} />
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            <StatusBadge diasRestantes={diasRestantes} />
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <button
+                              type="button"
+                              className="text-indigo-600 hover:text-indigo-900 mr-4"
+                              onClick={() => handleOpenDetalles(lic.id)}
+                            >
+                              Ver detalles
+                            </button>
+                            <button
+                              type="button"
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Eliminar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-};
+        </div>
+
+        <DetallesLicenciaModal
+        isOpen={isDetallesModalOpen}
+        onClose={handleCloseDetalles}
+        licenciaId={selectedLicenciaId}
+        />
+
+        <AddLicenciaModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSaveSuccess={handleAddSuccess}
+        />
+        </div>
+        );
+        };
