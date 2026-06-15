@@ -7,6 +7,7 @@ import { ResetPasswordModal } from "../components/ResetPasswordModal";
 import { ConfirmModal } from "../../../shared/components/molecules/ConfirmModal";
 import Spinner from "../../../shared/components/atoms/Spinner";
 import type { Usuario } from "../usuariosService";
+import { useSearch } from "../../../shared/hooks/useSearch";
 
 export const UsuariosPage = () => {
   const {
@@ -25,6 +26,13 @@ export const UsuariosPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [resetModal, setResetModal] = useState<Usuario | null>(null);
   const [toggleTarget, setToggleTarget] = useState<Usuario | null>(null);
+
+  const { query, setQuery, filtered } = useSearch(usuarios, [
+    "nombre",
+    "apellido",
+    "correo",
+    "departamento",
+  ]);
 
   const handleNew = () => {
     setSelected(null);
@@ -66,13 +74,22 @@ export const UsuariosPage = () => {
               Gestión de usuarios del sistema
             </p>
           </div>
-          <button
-            onClick={handleNew}
-            className="cursor-pointer flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
-          >
-            <Plus size={16} />
-            Nuevo usuario
-          </button>
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder="Buscar usuario..."
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 w-56"
+            />
+            <button
+              onClick={handleNew}
+              className="cursor-pointer flex items-center gap-2 rounded-md bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 transition-colors"
+            >
+              <Plus size={16} />
+              Nuevo usuario
+            </button>
+          </div>
         </div>
 
         {/* Contenido */}
@@ -84,7 +101,7 @@ export const UsuariosPage = () => {
           <div className="text-center py-20 text-red-500 text-sm">{error}</div>
         ) : (
           <UsuariosTable
-            usuarios={usuarios}
+            usuarios={filtered}
             onEdit={handleEdit}
             onResetPassword={setResetModal}
             onToggleActivo={handleToggleActivo}
