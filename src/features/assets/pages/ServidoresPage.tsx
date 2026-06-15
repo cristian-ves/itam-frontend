@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import api from "../../../shared/services/api";
-import { AddServidorModal } from "../components/AddServidorModal";
 
 interface Servidor {
   id: number;
@@ -45,7 +44,6 @@ const StatusBadge = ({ estado }: { estado: string }) => {
 export const ServidoresPage = () => {
   const [servidores, setServidores] = useState<Servidor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const fetchServidores = useCallback(async () => {
     setLoading(true);
@@ -69,35 +67,12 @@ export const ServidoresPage = () => {
     return () => window.clearTimeout(timer);
   }, [fetchServidores]);
 
-  const handleOpenAddModal = () => {
-    setIsAddModalOpen(true);
-  };
-
-  const handleCloseAddModal = () => {
-    setIsAddModalOpen(false);
-  };
-
-  const handleServidorAdded = () => {
-    void fetchServidores();
-  };
-
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <h1 className="text-2xl font-bold text-gray-900">Servidores</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Lista de todos los servidores registrados en el sistema.
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
-            onClick={handleOpenAddModal}
-            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
-            Agregar servidor
-          </button>
+          <p className="mt-2 text-sm text-gray-700"></p>
         </div>
       </div>
       <div className="mt-8 flow-root">
@@ -205,12 +180,6 @@ export const ServidoresPage = () => {
           </div>
         </div>
       </div>
-
-      <AddServidorModal
-        isOpen={isAddModalOpen}
-        onClose={handleCloseAddModal}
-        onAddSuccess={handleServidorAdded}
-      />
     </div>
   );
 };

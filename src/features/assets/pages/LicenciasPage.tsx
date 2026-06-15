@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import api from "../../../shared/services/api";
 import { DetallesLicenciaModal } from "../components/DetallesLicenciaModal";
 import { AddLicenciaModal } from "../components/AddLicenciaModal";
+import { EditLicenciaModal } from "../components/EditLicenciaModal";
 
 interface Licencia {
   id: number;
@@ -79,6 +81,10 @@ export const LicenciasPage = () => {
   // Estado para el modal de agregar
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
+  // Estado para el modal de editar
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editLicenciaId, setEditLicenciaId] = useState<number | null>(null);
+
   const handleOpenDetalles = (id: number) => {
     setSelectedLicenciaId(id);
     setIsDetallesModalOpen(true);
@@ -87,6 +93,16 @@ export const LicenciasPage = () => {
   const handleCloseDetalles = () => {
     setIsDetallesModalOpen(false);
     setSelectedLicenciaId(null);
+  };
+
+  const handleOpenEdit = (id: number) => {
+    setEditLicenciaId(id);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditModalOpen(false);
+    setEditLicenciaId(null);
   };
 
   const fetchLicencias = async () => {
@@ -101,7 +117,28 @@ export const LicenciasPage = () => {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (
+      window.confirm(
+        "¿Estás seguro de que deseas eliminar esta licencia? Esta acción no se puede deshacer.",
+      )
+    ) {
+      try {
+        await api.delete(`/licencia/${id}`);
+        toast.success("Licencia eliminada correctamente");
+        fetchLicencias();
+      } catch (error) {
+        console.error("Error deleting licencia:", error);
+        toast.error("No se pudo eliminar la licencia");
+      }
+    }
+  };
+
   const handleAddSuccess = () => {
+    fetchLicencias();
+  };
+
+  const handleEditSuccess = () => {
     fetchLicencias();
   };
 
@@ -129,8 +166,8 @@ export const LicenciasPage = () => {
             Agregar licencia
           </button>
         </div>
-        </div>
-        <div className="mt-8 flow-root">
+      </div>
+      <div className="mt-8 flow-root">
         <div className="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
           <div className="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
             <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
@@ -240,12 +277,14 @@ export const LicenciasPage = () => {
                             <button
                               type="button"
                               className="text-blue-600 hover:text-blue-900 mr-4"
+                              onClick={() => handleOpenEdit(lic.id)}
                             >
                               Editar
                             </button>
                             <button
                               type="button"
                               className="text-red-600 hover:text-red-900"
+                              onClick={() => handleDelete(lic.id)}
                             >
                               Eliminar
                             </button>
@@ -259,19 +298,26 @@ export const LicenciasPage = () => {
             </div>
           </div>
         </div>
-        </div>
+      </div>
 
-        <DetallesLicenciaModal
+      <DetallesLicenciaModal
         isOpen={isDetallesModalOpen}
         onClose={handleCloseDetalles}
         licenciaId={selectedLicenciaId}
-        />
+      />
 
-        <AddLicenciaModal
+      <AddLicenciaModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSaveSuccess={handleAddSuccess}
-        />
-        </div>
-        );
-        };
+      />
+
+      <EditLicenciaModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEdit}
+        licenciaId={editLicenciaId}
+        onSaveSuccess={handleEditSuccess}
+      />
+    </div>
+  );
+};
