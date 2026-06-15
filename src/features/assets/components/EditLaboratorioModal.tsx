@@ -62,8 +62,8 @@ export const EditLaboratorioModal = ({
         const laboratorio = response.data;
 
         setFormData({
-          nombre: laboratorio.nombre ?? laboratorio.nombre_lab ?? "",
-          edificio: laboratorio.edificio ?? laboratorio.edificio_salon ?? "",
+          nombre: laboratorio.nombre ?? "",
+          edificio: laboratorio.edificio ?? "",
           piso: laboratorio.piso ?? "",
           capacidad: laboratorio.capacidad ?? "",
           estado: laboratorio.estado ?? "",

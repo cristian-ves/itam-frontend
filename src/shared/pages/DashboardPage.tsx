@@ -69,7 +69,7 @@ export const DashboardPage = () => {
         ] = await Promise.allSettled([
           api.get("/dashboard"),
           api.get("/dashboard/activos"),
-          api.get("/dashboard/laboratorios"),
+          api.get("/ubicacion"),
           api.get("/dashboard/servidores"),
           api.get("/dashboard/proyectores"),
           api.get("/dashboard/licencias"),
@@ -113,9 +113,9 @@ export const DashboardPage = () => {
             labs.forEach((lab: any) => {
               items.push({
                 id: `lab-${lab.id}`,
-                activo: lab.nombre_lab || "Laboratorio",
+                activo: lab.nombre || "Laboratorio",
                 tipo: "Laboratorio",
-                detalle: lab.edificio_salon || "Sin ubicación",
+                detalle: lab.edificio || "Sin ubicación",
                 info: `Capacidad: ${lab.capacidad || 0}`,
                 estado: lab.estado || "Desconocido",
                 estadoColor: getStatusColor(lab.estado || ""),

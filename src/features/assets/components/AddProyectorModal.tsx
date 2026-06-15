@@ -92,7 +92,7 @@ export const AddProyectorModal = ({
       setIsLoadingLaboratorios(true);
 
       try {
-        const response = await api.get("/dashboard/laboratorios");
+        const response = await api.get("/ubicacion");
         const laboratoriosData = response.data?.data ?? response.data ?? [];
         setLaboratorios(
           Array.isArray(laboratoriosData) ? laboratoriosData : [],

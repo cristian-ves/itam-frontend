@@ -7,8 +7,9 @@ import { toast } from "sonner";
 
 interface Laboratorio {
   id: number;
-  nombre_lab: string;
-  edificio_salon: string;
+  nombre: string;
+  edificio: string;
+  piso: string;
   capacidad: number;
   estado: string;
 }
@@ -54,7 +55,7 @@ export const LaboratoriosPage = () => {
     setError(null);
 
     try {
-      const response = await api.get("/dashboard/laboratorios");
+      const response = await api.get("/ubicacion");
       setLaboratorios(response.data);
     } catch (err) {
       console.error("Error fetching laboratorios:", err);
@@ -71,7 +72,7 @@ export const LaboratoriosPage = () => {
       setLoading(true);
 
       try {
-        const response = await api.get("/dashboard/laboratorios");
+        const response = await api.get("/ubicacion");
         setLaboratorios(response.data);
       } catch (err) {
         console.error("Error fetching laboratorios:", err);
@@ -118,18 +119,13 @@ export const LaboratoriosPage = () => {
   };
 
   const handleCloseDeleteModal = () => {
-    if (isDeleting) {
-      return;
-    }
-
+    if (isDeleting) return;
     setIsDeleteModalOpen(false);
     setLabToDelete(null);
   };
 
   const handleConfirmDelete = async () => {
-    if (!labToDelete) {
-      return;
-    }
+    if (!labToDelete) return;
 
     setIsDeleting(true);
     try {
@@ -138,7 +134,7 @@ export const LaboratoriosPage = () => {
         currentLaboratorios.filter((lab) => lab.id !== labToDelete.id),
       );
       toast.success(
-        `Laboratorio "${labToDelete.nombre_lab}" eliminado correctamente`,
+        `Laboratorio "${labToDelete.nombre}" eliminado correctamente`,
       );
       setIsDeleteModalOpen(false);
       setLabToDelete(null);
@@ -162,9 +158,9 @@ export const LaboratoriosPage = () => {
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
-          <h1 className="text-2xl font-bold text-gray-900">Laboratorios</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Ubicaciones</h1>
           <p className="mt-2 text-sm text-gray-700">
-            Lista de todos los laboratorios registrados en el sistema.
+            Lista todas las ubicaciones y laboratorios registrados.
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
@@ -173,7 +169,7 @@ export const LaboratoriosPage = () => {
             onClick={handleAddLaboratorioClick} // Asigna el manejador de clic
             className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           >
-            Agregar laboratorio
+            Agregar Ubicacion
           </button>
         </div>
       </div>
@@ -194,13 +190,19 @@ export const LaboratoriosPage = () => {
                       scope="col"
                       className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                     >
-                      Nombre Laboratorio
+                      Nombre
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                     >
-                      Edificio/Salón
+                      Edificio
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                    >
+                      Piso
                     </th>
                     <th
                       scope="col"
@@ -226,7 +228,7 @@ export const LaboratoriosPage = () => {
                   {loading ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="py-4 text-center text-sm text-gray-500"
                       >
                         Cargando laboratorios...
@@ -235,7 +237,7 @@ export const LaboratoriosPage = () => {
                   ) : error ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="py-4 text-center text-sm text-red-600"
                       >
                         {error}
@@ -244,7 +246,7 @@ export const LaboratoriosPage = () => {
                   ) : laboratorios.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={6}
+                        colSpan={7}
                         className="py-4 text-center text-sm text-gray-500"
                       >
                         No hay laboratorios registrados.
@@ -257,10 +259,13 @@ export const LaboratoriosPage = () => {
                           {lab.id}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {lab.nombre_lab}
+                          {lab.nombre}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                          {lab.edificio_salon}
+                          {lab.edificio}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {lab.piso}
                         </td>
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {lab.capacidad}
@@ -275,7 +280,7 @@ export const LaboratoriosPage = () => {
                             onClick={(e) => handleEditClick(lab.id, e)}
                           >
                             Editar
-                            <span className="sr-only">, {lab.nombre_lab}</span>
+                            <span className="sr-only">, {lab.nombre}</span>
                           </button>
                           <a
                             href="#"
@@ -283,15 +288,15 @@ export const LaboratoriosPage = () => {
                             onClick={(e) => handleDetallesClick(lab.id, e)}
                           >
                             Detalles
-                            <span className="sr-only">, {lab.nombre_lab}</span>
+                            <span className="sr-only">, {lab.nombre}</span>
                           </a>
                           <button
                             type="button"
-                            className="ml-4 inline-flex items-center rounded-md bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-700 transition hover:bg-red-100 hover:text-red-800"
+                            className="ml-4 text-red-600 hover:text-red-900"
                             onClick={(e) => handleDeleteClick(lab, e)}
                           >
                             Eliminar
-                            <span className="sr-only">, {lab.nombre_lab}</span>
+                            <span className="sr-only">, {lab.nombre}</span>
                           </button>
                         </td>
                       </tr>
@@ -339,7 +344,7 @@ export const LaboratoriosPage = () => {
               <p className="mt-2 text-sm text-slate-600">
                 Estás por eliminar{" "}
                 <span className="font-semibold text-slate-900">
-                  {labToDelete.nombre_lab}
+                  {labToDelete.nombre}
                 </span>
                 . Esta acción no se puede deshacer.
               </p>

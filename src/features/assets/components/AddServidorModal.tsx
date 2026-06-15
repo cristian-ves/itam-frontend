@@ -94,7 +94,7 @@ export const AddServidorModal = ({
       setIsLoadingUbicaciones(true);
 
       try {
-        const response = await api.get("/dashboard/laboratorios");
+        const response = await api.get("/ubicacion");
         const ubicacionesData = response.data?.data ?? response.data ?? [];
         setUbicaciones(Array.isArray(ubicacionesData) ? ubicacionesData : []);
       } catch (error) {
