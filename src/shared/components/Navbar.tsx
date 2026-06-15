@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { UserCircle, LogOut } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useAppDispatch } from "../../app/hooks";
@@ -16,6 +16,10 @@ export const Navbar = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
+  const { pathname } = useLocation()
+
+  const isActivosActive = pathname.startsWith("/activos")
+
   const handleLogout = () => {
     dispatch(logout());
     navigate("/login", { replace: true });
@@ -24,29 +28,32 @@ export const Navbar = () => {
   return (
     <header className="sticky top-0 z-50 h-14 bg-gray-900 border-b border-gray-700 flex items-center justify-between px-6 shrink-0">
       <nav className="flex items-center gap-1">
-        {navLinks.map(({ to, text }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${
-                isActive
+        {navLinks.map(({ to, text }) => {
+          const isActivos = to === "/activos/laboratorios"
+          const isActive = isActivos ? pathname.startsWith("/activos") : pathname === to
+
+          return (
+            <NavLink
+              key={to}
+              to={to}
+              className={() =>
+                `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${isActive
                   ? "bg-gray-700 text-white"
                   : "text-gray-400 hover:text-white hover:bg-gray-800"
-              }`
-            }
-          >
-            {text}
-          </NavLink>
-        ))}
+                }`
+              }
+            >
+              {text}
+            </NavLink>
+          )
+        })}
         {user?.rol === "Administrador" && (
           <NavLink
             to="/usuarios"
             className={({ isActive }) =>
-              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${
-                isActive
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`
             }
           >
@@ -57,10 +64,9 @@ export const Navbar = () => {
           <NavLink
             to="/reportes"
             className={({ isActive }) =>
-              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${
-                isActive
-                  ? "bg-gray-700 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              `px-3 py-1.5 rounded-md text-sm font-medium transition-colors duration-150 ${isActive
+                ? "bg-gray-700 text-white"
+                : "text-gray-400 hover:text-white hover:bg-gray-800"
               }`
             }
           >
@@ -76,10 +82,9 @@ export const Navbar = () => {
         <NavLink
           to="/perfil"
           className={({ isActive }) =>
-            `cursor-pointer p-1.5 rounded-md transition-colors duration-150 ${
-              isActive
-                ? "bg-gray-700 text-white"
-                : "text-gray-400 hover:text-white hover:bg-gray-800"
+            `cursor-pointer p-1.5 rounded-md transition-colors duration-150 ${isActive
+              ? "bg-gray-700 text-white"
+              : "text-gray-400 hover:text-white hover:bg-gray-800"
             }`
           }
         >
