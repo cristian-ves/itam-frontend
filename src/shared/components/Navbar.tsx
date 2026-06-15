@@ -90,7 +90,10 @@ export const Navbar = () => {
         >
           <UserCircle size={20} />
         </NavLink>
-        <button className="cursor-pointer rounded-md bg-indigo-500 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-400 transition-colors duration-150">
+        <button
+          onClick={() => navigate("/carga-masiva")}
+          className="cursor-pointer rounded-md bg-indigo-500 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-400 transition-colors duration-150"
+        >
           Carga Masiva
         </button>
         <button

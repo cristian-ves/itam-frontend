@@ -24,6 +24,7 @@ import { ReportesPage } from "../../features/reportes/pages/ReportesPage";
 import { UsuariosPage } from "../../features/users/pages/UsuariosPage";
 import { AdminRoute } from "./AdminRoute";
 import { AuxAdminRoute } from "./AuxAdminRoute";
+import { CargaMasivaPage } from "../../features/carga-masiva/pages/CargaMasivaPage";
 
 const router = createBrowserRouter([
   // Always public
@@ -65,6 +66,7 @@ const router = createBrowserRouter([
       { path: "/perfil", element: <PerfilPage /> },
       { path: "/asignaciones", element: <AssignmentsPage /> },
       { path: "/mantenimiento", element: <MaintenancePage /> },
+      { path: "/carga-masiva", element: <CargaMasivaPage /> },
     ],
   },
 
