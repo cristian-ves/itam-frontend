@@ -13,6 +13,7 @@ import { NotFoundPage } from "../pages/NotFoundPage";
 import { DashboardPage } from "../pages/DashboardPage";
 import { AssetsLayout } from "../../features/assets/layout/AssetsLayout";
 import {
+  ActivosListadoPage,
   LaboratoriosPage,
   LicenciasPage,
   ProyectoresPage,
@@ -45,6 +46,7 @@ const router = createBrowserRouter([
         element: <AssetsLayout />,
         children: [
           { index: true, element: <Navigate to="laboratorios" replace /> },
+          { path: "listado", element: <ActivosListadoPage /> },
           { path: "laboratorios", element: <LaboratoriosPage /> },
           { path: "servidores", element: <ServidoresPage /> },
           { path: "proyectores", element: <ProyectoresPage /> },

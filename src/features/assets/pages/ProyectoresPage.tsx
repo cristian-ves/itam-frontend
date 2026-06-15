@@ -1,30 +1,13 @@
-// Datos de ejemplo
-const proyectores = [
-  {
-    id: "PROY-001",
-    marcaModelo: "Epson PowerLite 1781W",
-    laboratorio: "Laboratorio de Redes",
-    estado: "Disponible",
-  },
-  {
-    id: "PROY-002",
-    marcaModelo: "BenQ MW632ST",
-    laboratorio: "Laboratorio de Cómputo Avanzado",
-    estado: "En uso",
-  },
-  {
-    id: "PROY-003",
-    marcaModelo: "Optoma HD146X",
-    laboratorio: "Sala de Juntas A",
-    estado: "Reparación",
-  },
-  {
-    id: "PROY-004",
-    marcaModelo: "ViewSonic PA503S",
-    laboratorio: "Auditorio Principal",
-    estado: "Disponible",
-  },
-];
+import { useCallback, useEffect, useState } from "react";
+import api from "../../../shared/services/api";
+
+interface Proyector {
+  id: number;
+  nombre: string;
+  marca_y_modelo: string;
+  laboratorio_asignado: string | null;
+  estado: string;
+}
 
 // Componente para la insignia de estado
 const StatusBadge = ({ estado }: { estado: string }) => {
@@ -36,10 +19,15 @@ const StatusBadge = ({ estado }: { estado: string }) => {
     case "disponible":
       colorClasses = "bg-green-100 text-green-800";
       break;
+    case "asignado":
     case "en uso":
+      colorClasses = "bg-blue-100 text-blue-800";
+      break;
+    case "en mantenimiento":
+    case "reparación":
       colorClasses = "bg-yellow-100 text-yellow-800";
       break;
-    case "reparación":
+    case "fallo":
       colorClasses = "bg-red-100 text-red-800";
       break;
     default:
@@ -51,22 +39,37 @@ const StatusBadge = ({ estado }: { estado: string }) => {
 };
 
 export const ProyectoresPage = () => {
+  const [proyectores, setProyectores] = useState<Proyector[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchProyectores = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const response = await api.get("/dashboard/proyectores");
+      const proyectoresData = response.data?.data ?? response.data ?? [];
+      setProyectores(Array.isArray(proyectoresData) ? proyectoresData : []);
+    } catch (error) {
+      console.error("Error fetching proyectores:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void fetchProyectores();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [fetchProyectores]);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
         <div className="sm:flex-auto">
           <h1 className="text-2xl font-bold text-gray-900">Proyectores</h1>
-          <p className="mt-2 text-sm text-gray-700">
-            Lista de todos los proyectores registrados en el sistema.
-          </p>
-        </div>
-        <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
-          <button
-            type="button"
-            className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-          >
-            Agregar proyector
-          </button>
+          <p className="mt-2 text-sm text-gray-700"></p>
         </div>
       </div>
       <div className="mt-8 flow-root">
@@ -81,6 +84,12 @@ export const ProyectoresPage = () => {
                       className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
                     >
                       ID
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                    >
+                      Nombre
                     </th>
                     <th
                       scope="col"
@@ -109,51 +118,46 @@ export const ProyectoresPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {proyectores.map((proyector) => (
-                    <tr key={proyector.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {proyector.id}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {proyector.marcaModelo}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {proyector.laboratorio}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <StatusBadge estado={proyector.estado} />
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a
-                          href="#"
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                          <span className="sr-only">
-                            , {proyector.marcaModelo}
-                          </span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-yellow-600 hover:text-yellow-900"
-                        >
-                          Reportar falla
-                          <span className="sr-only">
-                            , {proyector.marcaModelo}
-                          </span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-red-600 hover:text-red-900"
-                        >
-                          Eliminar
-                          <span className="sr-only">
-                            , {proyector.marcaModelo}
-                          </span>
-                        </a>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        Cargando proyectores...
                       </td>
                     </tr>
-                  ))}
+                  ) : proyectores.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        No hay proyectores registrados.
+                      </td>
+                    </tr>
+                  ) : (
+                    proyectores.map((proyector) => (
+                      <tr key={proyector.id}>
+                        <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                          {proyector.id}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {proyector.nombre}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {proyector.marca_y_modelo}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          {proyector.laboratorio_asignado || "No asignado"}
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                          <StatusBadge estado={proyector.estado} />
+                        </td>
+                        <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6"></td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

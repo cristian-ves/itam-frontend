@@ -1,58 +1,64 @@
-// Datos de ejemplo
-const licencias = [
-  {
-    id: "LIC-001",
-    software: "Microsoft Office 2021",
-    clave: "XXXXX-XXXXX-XXXXX-XXXXX-12345",
-    diasRestantes: 365,
-    estado: "Activa",
-  },
-  {
-    id: "LIC-002",
-    software: "Adobe Photoshop CC",
-    clave: "YYYYY-YYYYY-YYYYY-YYYYY-67890",
-    diasRestantes: 25,
-    estado: "Activa",
-  },
-  {
-    id: "LIC-003",
-    software: "Windows 11 Pro",
-    clave: "ZZZZZ-ZZZZZ-ZZZZZ-ZZZZZ-11223",
-    diasRestantes: 0,
-    estado: "Vencida",
-  },
-  {
-    id: "LIC-004",
-    software: "AutoCAD 2023",
-    clave: "AAAAA-AAAAA-AAAAA-AAAAA-44556",
-    diasRestantes: 120,
-    estado: "Activa",
-  },
-];
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import api from "../../../shared/services/api";
+import { DetallesLicenciaModal } from "../components/DetallesLicenciaModal";
+import { AddLicenciaModal } from "../components/AddLicenciaModal";
+import { EditLicenciaModal } from "../components/EditLicenciaModal";
+
+interface Licencia {
+  id: number;
+  software: string;
+  version: string;
+  proveedor: string;
+  cantidad_licencias: number;
+  tipo_licencia: string;
+  fecha_adquisicion: string;
+  fecha_vencimiento: string | null;
+  costo: string;
+  notas: string;
+  clave_producto: string;
+}
+
+const calculateDiasRestantes = (
+  fecha_vencimiento: string | null,
+): number | null => {
+  if (!fecha_vencimiento) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const vencimiento = new Date(fecha_vencimiento);
+  // Add timezone offset to avoid being off by one day for UTC dates
+  const userTimezoneOffset = vencimiento.getTimezoneOffset() * 60000;
+  const diffTime = vencimiento.getTime() + userTimezoneOffset - today.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays;
+};
 
 // Componente para la insignia de estado
-const StatusBadge = ({ estado }: { estado: string }) => {
+const StatusBadge = ({ diasRestantes }: { diasRestantes: number | null }) => {
   const baseClasses =
     "px-2 inline-flex text-xs leading-5 font-semibold rounded-full";
   let colorClasses = "";
+  let estadoText = "";
 
-  switch (estado.toLowerCase()) {
-    case "activa":
-      colorClasses = "bg-green-100 text-green-800";
-      break;
-    case "vencida":
-      colorClasses = "bg-red-100 text-red-800";
-      break;
-    default:
-      colorClasses = "bg-gray-100 text-gray-800";
-      break;
+  if (diasRestantes === null) {
+    colorClasses = "bg-green-100 text-green-800";
+    estadoText = "Activa";
+  } else if (diasRestantes > 0) {
+    colorClasses = "bg-green-100 text-green-800";
+    estadoText = "Activa";
+  } else {
+    colorClasses = "bg-red-100 text-red-800";
+    estadoText = "Vencida";
   }
 
-  return <span className={`${baseClasses} ${colorClasses}`}>{estado}</span>;
+  return <span className={`${baseClasses} ${colorClasses}`}>{estadoText}</span>;
 };
 
 // Componente para la celda de Días Restantes
-const DiasRestantesCell = ({ dias }: { dias: number }) => {
+const DiasRestantesCell = ({ dias }: { dias: number | null }) => {
+  if (dias === null) {
+    return <span className="text-gray-500">N/A</span>;
+  }
   if (dias <= 0) {
     return <span className="font-medium text-red-600">0 días</span>;
   }
@@ -63,6 +69,83 @@ const DiasRestantesCell = ({ dias }: { dias: number }) => {
 };
 
 export const LicenciasPage = () => {
+  const [licencias, setLicencias] = useState<Licencia[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Estados para el modal de detalles
+  const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
+  const [selectedLicenciaId, setSelectedLicenciaId] = useState<number | null>(
+    null,
+  );
+
+  // Estado para el modal de agregar
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Estado para el modal de editar
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editLicenciaId, setEditLicenciaId] = useState<number | null>(null);
+
+  const handleOpenDetalles = (id: number) => {
+    setSelectedLicenciaId(id);
+    setIsDetallesModalOpen(true);
+  };
+
+  const handleCloseDetalles = () => {
+    setIsDetallesModalOpen(false);
+    setSelectedLicenciaId(null);
+  };
+
+  const handleOpenEdit = (id: number) => {
+    setEditLicenciaId(id);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditModalOpen(false);
+    setEditLicenciaId(null);
+  };
+
+  const fetchLicencias = async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/licencia");
+      setLicencias(response.data);
+    } catch (error) {
+      console.error("Error fetching licencias:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (
+      window.confirm(
+        "¿Estás seguro de que deseas eliminar esta licencia? Esta acción no se puede deshacer.",
+      )
+    ) {
+      try {
+        await api.delete(`/licencia/${id}`);
+        toast.success("Licencia eliminada correctamente");
+        fetchLicencias();
+      } catch (error) {
+        console.error("Error deleting licencia:", error);
+        toast.error("No se pudo eliminar la licencia");
+      }
+    }
+  };
+
+  const handleAddSuccess = () => {
+    fetchLicencias();
+  };
+
+  const handleEditSuccess = () => {
+    fetchLicencias();
+  };
+
+  useEffect(() => {
+    fetchLicencias();
+  }, []);
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="sm:flex sm:items-center">
@@ -71,13 +154,14 @@ export const LicenciasPage = () => {
             Licencias de Software
           </h1>
           <p className="mt-2 text-sm text-gray-700">
-            Lista de todas las licencias de software registradas en el sistema.
+            Lista completa de todas las licencias de software.
           </p>
         </div>
         <div className="mt-4 sm:ml-16 sm:mt-0 sm:flex-none">
           <button
             type="button"
             className="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+            onClick={() => setIsAddModalOpen(true)}
           >
             Agregar licencia
           </button>
@@ -94,19 +178,25 @@ export const LicenciasPage = () => {
                       scope="col"
                       className="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
                     >
-                      No.
+                      ID
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                     >
-                      Nombre del Software
+                      Software
                     </th>
                     <th
                       scope="col"
                       className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
                     >
-                      Clave del Producto
+                      Proveedor
+                    </th>
+                    <th
+                      scope="col"
+                      className="px-3 py-3.5 text-left text-sm font-semibold text-gray-900"
+                    >
+                      Fecha Vencimiento
                     </th>
                     <th
                       scope="col"
@@ -129,54 +219,105 @@ export const LicenciasPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
-                  {licencias.map((lic) => (
-                    <tr key={lic.id}>
-                      <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
-                        {lic.id}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        {lic.software}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500 font-mono">
-                        {lic.clave}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm">
-                        <DiasRestantesCell dias={lic.diasRestantes} />
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                        <StatusBadge estado={lic.estado} />
-                      </td>
-                      <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                        <a
-                          href="#"
-                          className="text-indigo-600 hover:text-indigo-900"
-                        >
-                          Editar
-                          <span className="sr-only">, {lic.software}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-yellow-600 hover:text-yellow-900"
-                        >
-                          Renovar
-                          <span className="sr-only">, {lic.software}</span>
-                        </a>
-                        <a
-                          href="#"
-                          className="ml-4 text-red-600 hover:text-red-900"
-                        >
-                          Eliminar
-                          <span className="sr-only">, {lic.software}</span>
-                        </a>
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        Cargando licencias...
                       </td>
                     </tr>
-                  ))}
+                  ) : licencias.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="py-4 text-center text-sm text-gray-500"
+                      >
+                        No hay licencias registradas.
+                      </td>
+                    </tr>
+                  ) : (
+                    licencias.map((lic) => {
+                      const diasRestantes = calculateDiasRestantes(
+                        lic.fecha_vencimiento,
+                      );
+                      return (
+                        <tr key={lic.id}>
+                          <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                            {lic.id}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {lic.software} {lic.version}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {lic.proveedor}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            {lic.fecha_vencimiento
+                              ? new Date(
+                                  lic.fecha_vencimiento,
+                                ).toLocaleDateString()
+                              : "N/A"}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm">
+                            <DiasRestantesCell dias={diasRestantes} />
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                            <StatusBadge diasRestantes={diasRestantes} />
+                          </td>
+                          <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                            <button
+                              type="button"
+                              className="text-indigo-600 hover:text-indigo-900 mr-4"
+                              onClick={() => handleOpenDetalles(lic.id)}
+                            >
+                              Ver detalles
+                            </button>
+                            <button
+                              type="button"
+                              className="text-blue-600 hover:text-blue-900 mr-4"
+                              onClick={() => handleOpenEdit(lic.id)}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              className="text-red-600 hover:text-red-900"
+                              onClick={() => handleDelete(lic.id)}
+                            >
+                              Eliminar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
           </div>
         </div>
       </div>
+
+      <DetallesLicenciaModal
+        isOpen={isDetallesModalOpen}
+        onClose={handleCloseDetalles}
+        licenciaId={selectedLicenciaId}
+      />
+
+      <AddLicenciaModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSaveSuccess={handleAddSuccess}
+      />
+
+      <EditLicenciaModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEdit}
+        licenciaId={editLicenciaId}
+        onSaveSuccess={handleEditSuccess}
+      />
     </div>
   );
 };
