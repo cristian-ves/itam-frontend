@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { EditActivoModal } from "../components/EditActivoModal";
+import { DetallesActivoModal } from "../components/DetallesActivoModal";
 
 // Ajusta esta interfaz según la estructura real de los datos que devuelve tu backend
 interface Activo {
@@ -13,11 +14,19 @@ export const ActivosListadoPage = () => {
   const [activos, setActivos] = useState<Activo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // States for Edit Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedActivoId, setSelectedActivoId] = useState<string | number | null>(null);
-  
+  const [selectedActivoId, setSelectedActivoId] = useState<
+    string | number | null
+  >(null);
+
+  // States for Details Modal
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [detailsActivoId, setDetailsActivoId] = useState<
+    string | number | null
+  >(null);
+
   const navigate = useNavigate();
 
   const fetchActivos = async () => {
@@ -50,8 +59,43 @@ export const ActivosListadoPage = () => {
     setSelectedActivoId(null);
   };
 
+  const handleDetailsClick = (id: string | number) => {
+    setDetailsActivoId(id);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleCloseDetailsModal = () => {
+    setIsDetailsModalOpen(false);
+    setDetailsActivoId(null);
+  };
+
   const handleSaveSuccess = () => {
     fetchActivos();
+  };
+
+  const handleDeleteClick = async (id: string | number) => {
+    if (
+      !window.confirm(
+        "¿Estás seguro de que deseas eliminar este activo físicamente del inventario? Esta acción no se puede deshacer.",
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3000/activos/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Error al eliminar el activo");
+      }
+
+      fetchActivos();
+    } catch (err) {
+      console.error(err);
+      alert("Hubo un error al eliminar el activo.");
+    }
   };
 
   return (
@@ -113,12 +157,21 @@ export const ActivosListadoPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
+                      className="text-green-600 hover:text-green-900 mr-4"
+                      onClick={() => handleDetailsClick(activo.id)}
+                    >
+                      Ver detalles
+                    </button>
+                    <button
                       className="text-indigo-600 hover:text-indigo-900 mr-4"
                       onClick={() => handleEditClick(activo.id)}
                     >
                       Editar
                     </button>
-                    <button className="text-red-600 hover:text-red-900">
+                    <button
+                      className="text-red-600 hover:text-red-900"
+                      onClick={() => handleDeleteClick(activo.id)}
+                    >
                       Eliminar
                     </button>
                   </td>
@@ -134,6 +187,12 @@ export const ActivosListadoPage = () => {
         onClose={handleCloseEditModal}
         activoId={selectedActivoId}
         onSaveSuccess={handleSaveSuccess}
+      />
+
+      <DetallesActivoModal
+        isOpen={isDetailsModalOpen}
+        onClose={handleCloseDetailsModal}
+        activoId={detailsActivoId}
       />
     </div>
   );
