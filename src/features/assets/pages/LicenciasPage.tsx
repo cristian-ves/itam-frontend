@@ -46,7 +46,7 @@ export const LicenciasPage = () => {
   useEffect(() => {
     const fetchLicencias = async () => {
       try {
-        const response = await api.get("/dashboard/licencias");
+        const response = await api.get("/licencia");
         setLicencias(response.data);
       } catch (error) {
         console.error("Error fetching licencias:", error);

@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import api from "../../../shared/services/api";
 import { AddLaboratorioModal } from "../components/AddLaboratorioModal"; // Importa el nuevo componente modal
 import { DetallesLaboratorioModal } from "../components/DetallesLaboratorioModal";
+import { EditLaboratorioModal } from "../components/EditLaboratorioModal.tsx";
 import { toast } from "sonner";
 
 interface Laboratorio {
@@ -37,15 +38,38 @@ export const LaboratoriosPage = () => {
   const [laboratorios, setLaboratorios] = useState<Laboratorio[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false); // Estado para controlar la visibilidad del modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetallesModalOpen, setIsDetallesModalOpen] = useState(false);
   const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
+  const [selectedEditLabId, setSelectedEditLabId] = useState<number | null>(
+    null,
+  );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [labToDelete, setLabToDelete] = useState<Laboratorio | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchLaboratorios = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.get("/dashboard/laboratorios");
+      setLaboratorios(response.data);
+    } catch (err) {
+      console.error("Error fetching laboratorios:", err);
+      setError(
+        "No se pudieron cargar los laboratorios. Por favor, inténtalo de nuevo más tarde.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
-    const fetchLaboratorios = async () => {
+    const loadLaboratorios = async () => {
+      setLoading(true);
+
       try {
         const response = await api.get("/dashboard/laboratorios");
         setLaboratorios(response.data);
@@ -59,8 +83,8 @@ export const LaboratoriosPage = () => {
       }
     };
 
-    fetchLaboratorios();
-  }, []);
+    void loadLaboratorios();
+  }, [fetchLaboratorios]);
 
   const handleAddLaboratorioClick = () => {
     setIsAddModalOpen(true);
@@ -74,6 +98,12 @@ export const LaboratoriosPage = () => {
     e.preventDefault();
     setSelectedLabId(id);
     setIsDetallesModalOpen(true);
+  };
+
+  const handleEditClick = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setSelectedEditLabId(id);
+    setIsEditModalOpen(true);
   };
 
   const handleCloseDetallesModal = () => {
@@ -120,25 +150,12 @@ export const LaboratoriosPage = () => {
     }
   };
 
-  // Función para volver a cargar los laboratorios después de una adición exitosa
   const handleLaboratorioAdded = () => {
-    setLoading(true); // Muestra el estado de carga nuevamente
-    setError(null); // Limpia cualquier error previo
-    const fetchLaboratorios = async () => {
-      // Vuelve a obtener los datos
-      try {
-        const response = await api.get("/dashboard/laboratorios");
-        setLaboratorios(response.data);
-      } catch (err) {
-        console.error("Error al cargar laboratorios después de añadir:", err);
-        setError(
-          "No se pudieron cargar los laboratorios actualizados. Por favor, recarga la página.",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLaboratorios();
+    void fetchLaboratorios();
+  };
+
+  const handleLaboratorioEdited = () => {
+    void fetchLaboratorios();
   };
 
   return (
@@ -252,13 +269,14 @@ export const LaboratoriosPage = () => {
                           <StatusBadge estado={lab.estado} />
                         </td>
                         <td className="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                          <a
-                            href="#"
+                          <button
+                            type="button"
                             className="text-indigo-600 hover:text-indigo-900"
+                            onClick={(e) => handleEditClick(lab.id, e)}
                           >
                             Editar
                             <span className="sr-only">, {lab.nombre_lab}</span>
-                          </a>
+                          </button>
                           <a
                             href="#"
                             className="ml-4 text-gray-600 hover:text-gray-900"
@@ -294,6 +312,15 @@ export const LaboratoriosPage = () => {
         isOpen={isDetallesModalOpen}
         onClose={handleCloseDetallesModal}
         laboratorioId={selectedLabId}
+      />
+      <EditLaboratorioModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedEditLabId(null);
+        }}
+        laboratorioId={selectedEditLabId}
+        onSaveSuccess={handleLaboratorioEdited}
       />
       {isDeleteModalOpen && labToDelete ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6">
