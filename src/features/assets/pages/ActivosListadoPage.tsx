@@ -2,8 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { EditActivoModal } from "../components/EditActivoModal";
 import { DetallesActivoModal } from "../components/DetallesActivoModal";
+import { AddActivoModal } from "../components/AddActivoModal";
 
-// Ajusta esta interfaz según la estructura real de los datos que devuelve tu backend
+// Ajusta esta interfaz según la estructura real de los datos que devuelve backend
 interface Activo {
   id: string | number;
   nombre: string;
@@ -14,6 +15,9 @@ export const ActivosListadoPage = () => {
   const [activos, setActivos] = useState<Activo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // States for Add Modal
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   // States for Edit Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -48,6 +52,14 @@ export const ActivosListadoPage = () => {
   useEffect(() => {
     fetchActivos();
   }, []);
+
+  const handleOpenAddModal = () => {
+    setIsAddModalOpen(true);
+  };
+
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
 
   const handleEditClick = (id: string | number) => {
     setSelectedActivoId(id);
@@ -100,9 +112,15 @@ export const ActivosListadoPage = () => {
 
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">
-        Todos los Activos
-      </h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Todos los Activos</h2>
+        <button
+          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+          onClick={handleOpenAddModal}
+        >
+          Agregar activo
+        </button>
+      </div>
 
       {loading && <p className="text-gray-600">Cargando...</p>}
       {error && <p className="text-red-500">{error}</p>}
@@ -156,7 +174,7 @@ export const ActivosListadoPage = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
+                    <button
                       className="text-green-600 hover:text-green-900 mr-4"
                       onClick={() => handleDetailsClick(activo.id)}
                     >
@@ -193,6 +211,12 @@ export const ActivosListadoPage = () => {
         isOpen={isDetailsModalOpen}
         onClose={handleCloseDetailsModal}
         activoId={detailsActivoId}
+      />
+
+      <AddActivoModal
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onSaveSuccess={handleSaveSuccess}
       />
     </div>
   );
