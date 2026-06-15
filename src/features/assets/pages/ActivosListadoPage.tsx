@@ -36,7 +36,7 @@ export const ActivosListadoPage = () => {
   const fetchActivos = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/activos");
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/activos`);
       if (!response.ok) {
         throw new Error("Error al obtener los activos");
       }
@@ -95,9 +95,12 @@ export const ActivosListadoPage = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3000/activos/${id}`, {
-        method: "DELETE",
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/activos/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
 
       if (!response.ok) {
         throw new Error("Error al eliminar el activo");
